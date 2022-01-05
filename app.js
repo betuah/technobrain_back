@@ -79,7 +79,7 @@ if (env.db_type) {
 }
 
 // if(conn) {
-    if (env.node_env === 'production-https') {
+    if (env.node_env === 'production') {
         try {
             const privateKey  = fs.readFileSync(`${env.httpsPrivateKey}`, 'utf8')
             const certificate = fs.readFileSync(`${env.httpsCertificate}`, 'utf8')
