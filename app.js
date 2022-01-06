@@ -62,9 +62,13 @@ app.use(cookieParser())
 /* End Cookie Settings */
 
 /* Start of Routing Modules */
-const certificateRoute     = require('./routes/certificateRoute')
+const certificateRoute  = require('./routes/certificateRoute')
+const courceRoute       = require('./routes/coursesRoute')
+const usersRoute        = require('./routes/usersRoute')
 
 certificateRoute(app)
+courceRoute(app)
+usersRoute(app)
 /* End of Routing Modules */
 
 /* Start Database Connection Check */
