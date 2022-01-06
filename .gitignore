@@ -123,5 +123,5 @@ package-lock.json
 
 docker-compose-dev.yml
 
-serviceAccountKey.json
+serviceAccountKey*
 ./serviceAccountKey.json
