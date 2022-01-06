@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config()
 
 const env = {
     port: process.env.PORT,
@@ -10,7 +10,6 @@ const env = {
     client_host_prod: process.env.CLIENT_HOST_PROD,
     token_secret: process.env.TOKEN_SECRET,
     encryption_key: process.env.ENCRYPTION_KEY,
-    firebase_url: process.env.FIREBASE_URL,
     db_type: process.env.DB_TYPE,
     log_path: process.env.LOG_PATH,
     cache_path: process.env.LOG_PATH,
