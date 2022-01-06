@@ -1,18 +1,26 @@
-const pdf = require('../services/PDFGenerator')
+const pdf           = require('../services/PDFGenerator')
+const firebaseAdmin = require('../config/firebaseAdminConfig')
+const moment        = require('moment')
+const db            = firebaseAdmin.firestore()
 
 exports.index = async (req, res) => {
     const stream = res.writeHead(200, {
         'Content-Type': 'application/pdf'
     })
 
+    const participantId = req.params.participantId
+    const participantDb = db.collection('participant').doc(participantId)
+    const participant   = await (await participantDb.get()).data()
+
+    if (participant.completion == 0) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No certificate.' } 
+
     const data = {
-        title: 'Amazon Web Services - Technical Fundamental',
-        name: 'Betuah Anugerah',
-        date: '20 - 24 Desember 2021',
-        participantId: 'qowioi32r989wef9h',
-        certificateId: '001/TB/2021/00001',
+        ...participant.certificate,
+        participantId: `${participant.id}`,
         signatureDate: '05012022',
-        backCertificate: 'back001.jpg'
+        frontCertificate: 'front001001.png',
+        backCertificate: 'back001001.jpg',
+        fontCollor: '#504C69'
     }
 
     pdf.generate(
@@ -20,4 +28,66 @@ exports.index = async (req, res) => {
         (chunk) => stream.write(chunk),
         () => stream.end()
     )
+}
+
+exports.create = async (req, res) => {
+    try {
+        const year          = moment().locale('id').format("YYYY")
+        const participantId = req.params.participantId
+        const dbColletion   = db.collection('participant')
+        const participant   = await dbColletion.doc(participantId).get()
+        const courseData    = await (await (participant.data().course).get()).data()
+        const courseId      = await (await (participant.data().course).get()).id
+        const courseRef     = db.doc(`courses/${courseId}`)
+        const userData      = await (await (participant.data().user).get()).data()
+        const userId        = await (await (participant.data().user).get()).id
+        const graduteCount  = await (await dbColletion.where('course', '==', courseRef).where('completion', '==', 1).get()).size
+
+        if (participant.data() === undefined || courseData === undefined || userData === undefined) {
+            throw { 
+                status: 404, 
+                code: 'ERR_NOT_FOUND', 
+                messages: 'Participant Not Found.'
+            }
+        }
+
+        const sDate     = moment.unix(courseData.startDate).locale('id')
+        const eDate     = moment.unix(courseData.endDate).locale('id')
+
+        let date
+        if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
+            date = `${sDate.format('DD MM YYYY')} - ${eDate.format('DD MM YYYY')}`
+        } else {
+            date = `${sDate.format('D')} - ${eDate.format('DD MMMM YYYY')}`
+        }
+
+        const certificate   = {
+            number: `${courseData.courseCode}/TB/${year}/${graduteCount + 1}`,
+            signatureDate: moment().locale('id').unix(),
+            title: `${courseData.title}`,
+            name: `${userData.fullName}`,
+            date
+        }
+
+        await dbColletion.doc(participantId).update({
+            completion: 1,
+            certificate
+        })
+
+        res.status(200).json({
+            code: 'OK',
+            message: `Success creating certificate for ${userData.fullName}.`,
+            data: {
+                userId: userId,
+                certificate
+            }
+        })
+
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
 }

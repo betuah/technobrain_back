@@ -6,14 +6,16 @@ const generate = async (data, dataCallback, endCallback) => {
     const date            = data.date
     const title           = data.title
     const participantId   = data.participantId
-    const certificateId   = data.certificateId
+    const certificateId   = data.number
     const signatureDate   = data.signatureDate
     const backCertificate = data.backCertificate
+    const frontCertificate = data.frontCertificate
+    const fontCollor      = data.fontCollor
 
-    const capitalizeName = name.split(" ");
+    const capitalizeName = name.split(" ")
 
     const fullName = capitalizeName.map((word) => { 
-        return word[0].toUpperCase() + word.substring(1); 
+        return word[0].toUpperCase() + word.substring(1)
     }).join(" ")
 
     const qrOpts = {
@@ -36,16 +38,16 @@ const generate = async (data, dataCallback, endCallback) => {
 
     doc.on('data', dataCallback)
     doc.on('end', endCallback)
-    doc.image('public/images/front.png', 0, 0, { width: 842})
+    doc.image(`public/images/sertifikat/${frontCertificate}`, 0, 0, { width: 842})
         .image('public/images/technobrain-logo.png', 320, 45, { width: 120})
         .image('public/images/aws-logo.png', 460, 45, { width: 60})
-        .fillColor('#504C69').font('public/fonts/Montserrat/Montserrat-Bold.ttf').fontSize(35).text(fullName, 0, 250, {
+        .fillColor(`${fontCollor}`).font('public/fonts/Montserrat/Montserrat-Bold.ttf').fontSize(35).text(fullName, 0, 250, {
             align: 'center'
         })
-        .fillColor('#504C69').font('public/fonts/Montserrat/Montserrat-SemiBold.ttf').fontSize(14).text(title.toUpperCase(), 0, 350, {
+        .fillColor(`${fontCollor}`).font('public/fonts/Montserrat/Montserrat-SemiBold.ttf').fontSize(14).text(title.toUpperCase(), 0, 350, {
             align: 'center'
         })
-        .fillColor('#504C69').font('public/fonts/Montserrat/Montserrat-SemiBold.ttf').fontSize(12).text(date, 0, 413, {
+        .fillColor(`${fontCollor}`).font('public/fonts/Montserrat/Montserrat-SemiBold.ttf').fontSize(12).text(date, 0, 413, {
             align: 'center'
         })
         .image(signature, 390, 435, { width: 60, align: 'center' })
@@ -54,7 +56,7 @@ const generate = async (data, dataCallback, endCallback) => {
         size: 'A4',
         layout: 'landscape'
     })
-    doc.image(`public/images/${backCertificate}`, 0, 0, { width: 842})
+    doc.image(`public/images/sertifikat/${backCertificate}`, 0, 0, { width: 842})
     doc.image(code, 385, 418, { width: 80, align: 'center' })
     doc.font('public/fonts/Montserrat/Montserrat-Regular.ttf').fontSize(8).text(certificateId, 78, 495, {
         align: 'center'
