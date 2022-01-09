@@ -24,8 +24,8 @@ const generate = async (data, dataCallback, endCallback) => {
         }
     }
 
-    let signature   = await QRCode.toDataURL(`https://technobrainlab.com/certification/signature/${signatureDate}`, qrOpts)
-    let code        = await QRCode.toDataURL(`https://technobrainlab.com/certification/${participantId}`, qrOpts)
+    let signature   = await QRCode.toDataURL(`https://technobrainlab.com/certificate/signature/${signatureDate}`, qrOpts)
+    let code        = await QRCode.toDataURL(`https://technobrainlab.com/certificate/${participantId}`, qrOpts)
 
     const doc = new PDFDocument({
         size: 'A4',

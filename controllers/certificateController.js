@@ -4,30 +4,76 @@ const moment        = require('moment')
 const db            = firebaseAdmin.firestore()
 
 exports.index = async (req, res) => {
-    const stream = res.writeHead(200, {
-        'Content-Type': 'application/pdf'
-    })
+    try {
+        const participant     = await db.collection('participant').where('completion', '==', 1).get()
+        const participantData = await Promise.all(participant.docs.map(async doc => {
+            const user        = await (await doc.data().user.get()).data()
+            const course      = await (await doc.data().course.get()).data()
+            return {
+                id: doc.id,
+                certificate: doc.data().certificate,
+                completion: doc.data().completion,
+                user: {
+                    fullName : user.fullName,
+                    email : user.email
+                },
+                course: {
+                    title : course.title,
+                    courseType: course.courseType
+                }
 
-    const participantId = req.params.participantId
-    const participantDb = db.collection('participant').doc(participantId)
-    const participant   = await (await participantDb.get()).data()
+            }
+        }))
 
-    if (participant.completion == 0) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No certificate.' } 
+        if (participantData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
 
-    const data = {
-        ...participant.certificate,
-        participantId: `${participant.id}`,
-        signatureDate: '05012022',
-        frontCertificate: 'front001001.png',
-        backCertificate: 'back001001.jpg',
-        fontCollor: '#504C69'
+        res.status(200).json({
+            code: 'OK',
+            message: 'Recieved all data success.',
+            data: participantData
+        })
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
     }
+}
 
-    pdf.generate(
-        data,
-        (chunk) => stream.write(chunk),
-        () => stream.end()
-    )
+exports.getCertificate = async (req, res) => {
+    try {
+        const stream = res.writeHead(200, {
+            'Content-Type': 'application/pdf'
+        })
+    
+        const participantId = req.params.participantId
+        const participantDb = db.collection('participant').doc(participantId)
+        const participant   = await (await participantDb.get()).data()
+    
+        if (participant.completion == 0) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No certificate.' } 
+    
+        const data = {
+            ...participant.certificate,
+            participantId: `${participant.id}`,
+            signatureDate: '05012022',
+            frontCertificate: 'front001001.png',
+            backCertificate: 'back001001.jpg',
+            fontCollor: '#504C69'
+        }
+    
+        pdf.generate(
+            data,
+            (chunk) => stream.write(chunk),
+            () => stream.end()
+        )
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
 }
 
 exports.create = async (req, res) => {
