@@ -1,6 +1,6 @@
 const pdf           = require('../services/PDFGenerator')
 const firebaseAdmin = require('../config/firebaseAdminConfig')
-const moment        = require('moment')
+const moment        = require('moment-timezone')
 const db            = firebaseAdmin.firestore()
 
 exports.index = async (req, res) => {
@@ -78,7 +78,7 @@ exports.getCertificate = async (req, res) => {
 
 exports.create = async (req, res) => {
     try {
-        const year          = moment().locale('id').format("YYYY")
+        const year          = moment().tz("Asia/Jakarta").format("YYYY")
         const participantId = req.params.participantId
         const dbColletion   = db.collection('participant')
         const participant   = await dbColletion.doc(participantId).get()
@@ -97,8 +97,8 @@ exports.create = async (req, res) => {
             }
         }
 
-        const sDate     = moment.unix(courseData.startDate).locale('id')
-        const eDate     = moment.unix(courseData.endDate).locale('id')
+        const sDate     = moment.unix(courseData.startDate).locale('id').tz("Asia/Jakarta")
+        const eDate     = moment.unix(courseData.endDate).locale('id').tz("Asia/Jakarta")
 
         let date
         if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
