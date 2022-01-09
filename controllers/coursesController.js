@@ -5,12 +5,12 @@ const moment        = require('moment')
 exports.index = async (req, res) => {
     try {
         const courses     = await db.collection('courses').get()
-        const coursesData = courses.docs.map(doc => {
+        const coursesData = await await Promise.all(courses.docs.map(doc => {
             return {
                 ...doc.data(),
                 courseId: doc.id
             }
-        })
+        }))
 
         if (coursesData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No course data list.' }
 
