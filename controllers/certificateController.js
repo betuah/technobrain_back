@@ -97,14 +97,14 @@ exports.create = async (req, res) => {
             }
         }
 
-        const sDate     = moment.unix(courseData.startDate).locale('id')
-        const eDate     = moment.unix(courseData.endDate).locale('id')
+        const sDate     = moment.unix(courseData.startDate)
+        const eDate     = moment.unix(courseData.endDate)
 
         let date
         if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
-            date = `${sDate.format('DD MM YYYY')} - ${eDate.format('DD MM YYYY')}`
+            date = `${sDate.locale('id').format('DD MM YYYY')} - ${eDate.locale('id').format('DD MM YYYY')}`
         } else {
-            date = `${sDate.format('D')} - ${eDate.format('DD MMMM YYYY')}`
+            date = `${sDate.locale('id').format('D')} - ${eDate.locale('id').format('DD MMMM YYYY')}`
         }
 
         const certificate   = {
