@@ -55,7 +55,7 @@ exports.getCertificate = async (req, res) => {
     
         const data = {
             ...participant.certificate,
-            participantId: `${participant.id}`,
+            participantId: `${participantId}`,
             signatureDate: '05012022',
             frontCertificate: 'front001001.png',
             backCertificate: 'back001001.jpg',
