@@ -5,7 +5,7 @@ const moment        = require('moment')
 exports.index = async (req, res) => {
     try {
         const courses     = await db.collection('courses').get()
-        const coursesData = await await Promise.all(courses.docs.map(doc => {
+        const coursesData = await Promise.all(courses.docs.map(doc => {
             return {
                 ...doc.data(),
                 courseId: doc.id
@@ -36,6 +36,7 @@ exports.create = async (req, res) => {
             "title": req.body.title,
             "desc": req.body.desc,
             "level": req.body.level,
+            "price": req.body.price,
             "startRegisDate": req.body.startRegisDate,
             "endRegisDate": req.body.endRegisDate,
             "startDate": req.body.startDate,
@@ -48,8 +49,6 @@ exports.create = async (req, res) => {
             "feedback": null,
             "dateCreated": moment().locale('id').unix()
         }
-
-        console.log(courseData)
 
         await db.collection('courses').doc().set(courseData)
 
@@ -72,11 +71,16 @@ exports.enroll = async (req, res) => {
         const courseRef = db.doc(`courses/${req.body.courseId}`)
         const userRef   = db.doc(`users/${req.body.userId}`)
 
+        const courses = await (await courseRef.get()).data()
+        if (courses.price > 0 && (req.body.paymentStats === undefined || req.body.paymentPics) === undefined) {
+            throw { status: 400, code: 'ERR_BAD_REQUEST', messages: 'Required PaymentStats and paymentPics attribut!' }
+        }
+
         const enrollData = {
             course: courseRef,
             user: userRef,
-            paymentStats: req.body.paymentStats,
-            paymentPics: req.body.paymentPics,
+            paymentStats: courses.price > 0 ? req.body.paymentStats : null,
+            paymentPics: courses.price > 0 ? req.body.paymentPics : null,
             completion: 0
         }
 
