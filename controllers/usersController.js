@@ -31,7 +31,7 @@ exports.index = async (req, res) => {
 
 exports.create = async (req, res) => {
     try {
-        const rules = db.doc(`rules/${req.body.rules}`)
+        const rules = db.doc(`rules/${4}`)
 
         const usersData = {
             email       : req.body.email,
@@ -43,11 +43,17 @@ exports.create = async (req, res) => {
             rules       : rules
         }
 
-        await db.collection('users').add(usersData)
+        const resData = await db.collection('users').add(usersData)
+
+        delete usersData.rules
 
         res.status(200).json({
             code: 'OK',
-            message: 'Your data has been saved.'
+            message: 'Your data has been saved.',
+            data: {
+                userId: resData.id,
+                ...usersData
+            }
         })
     } catch (error) {
         console.log(new Error(error.message ? error.message : error))
