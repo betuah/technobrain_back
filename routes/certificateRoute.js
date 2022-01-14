@@ -10,4 +10,7 @@ module.exports = (app) => {
         
     app.route('/api/v1/certification/:participantId')
         .post(Certificate.create)
+
+    app.route('/api/v1/certificate/generate/all/:courseId')
+        .post(Certificate.createAll)
 }
