@@ -72,6 +72,11 @@ exports.enroll = async (req, res) => {
         const userRef   = db.doc(`users/${req.body.userId}`)
 
         const courses = await (await courseRef.get()).data()
+
+        console.log(courses)
+
+        if (courses === undefined) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'Your courses not found!' }
+
         if (courses.price > 0 && (req.body.paymentStats === undefined || req.body.paymentPics) === undefined) {
             throw { status: 400, code: 'ERR_BAD_REQUEST', messages: 'Required PaymentStats and paymentPics attribut!' }
         }
