@@ -31,7 +31,7 @@ const generate = async (data, dataCallback, endCallback) => {
         size: 'A4',
         layout: 'landscape',
         info: {
-            Title: `Sertifikat Pelatihan AWS Technical Fundamental - ${fullName}`,
+            Title: `${title} - ${fullName}`,
         },
         margins: { top: 0, left: 0, right: 0, bottom: 0 }
     })
