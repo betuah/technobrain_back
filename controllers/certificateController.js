@@ -46,16 +46,15 @@ exports.index = async (req, res) => {
 
 exports.getCertificate = async (req, res) => {
     try {
-        const stream = res.writeHead(200, {
-            'Content-Type': 'application/pdf'
-        })
-    
         const participantId = req.params.participantId
         const participantDb = db.collection('participant').doc(participantId)
         const participant   = await (await participantDb.get()).data()
+
+        if (participant === undefined) throw { status: 404, code: 'ERR_DATA_NOT_FOUND', messages: 'Participant not found!' } 
+
         const users         = await (await participant.user.get()).data()
     
-        if (participant.completion == 0) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No certificate.' } 
+        if (participant.completion == 0) throw { status: 404, code: 'ERR_DATA_NOT_COMPLETE', messages: 'Participant not complete the course.' } 
     
         const data = {
             ...participant.certificate,
@@ -67,6 +66,10 @@ exports.getCertificate = async (req, res) => {
             fontCollor: '#504C69'
         }
     
+        const stream = res.writeHead(200, {
+            'Content-Type': 'application/pdf'
+        })
+
         pdf.generate(
             data,
             (chunk) => stream.write(chunk),
