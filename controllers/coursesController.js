@@ -37,6 +37,7 @@ exports.create = async (req, res) => {
             "desc": req.body.desc,
             "level": req.body.level,
             "price": req.body.price,
+            "quota": req.body.quota,
             "startRegisDate": req.body.startRegisDate,
             "endRegisDate": req.body.endRegisDate,
             "startDate": req.body.startDate,
@@ -68,23 +69,30 @@ exports.create = async (req, res) => {
 
 exports.enroll = async (req, res) => {
     try {
-        const courseRef = db.doc(`courses/${req.body.courseId}`)
-        const userRef   = db.doc(`users/${req.body.userId}`)
+        const courseId   = req.body.courseId
+        const userId     = req.body.userId
+        const courseRef  = db.doc(`courses/${courseId}`)
+        const userRef    = db.doc(`users/${userId}`)
 
         const courses = await (await courseRef.get()).data()
 
-        console.log(courses)
-
         if (courses === undefined) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'Your courses not found!' }
 
-        if (courses.price > 0 && (req.body.paymentStats === undefined || req.body.paymentPics) === undefined) {
-            throw { status: 400, code: 'ERR_BAD_REQUEST', messages: 'Required PaymentStats and paymentPics attribut!' }
+        if (courses.price > 0 && req.body.paymentPics === undefined) {
+            throw { status: 400, code: 'ERR_BAD_REQUEST', messages: 'paymentPics attribut!' }
         }
+
+        const quota       = courses.quota
+        const userExist   = (await db.collection("participant").where('course', '==', courseRef).where('user', '==', userRef).get()).size
+        const enrollCount = (await db.collection("participant").where('course', '==', courseRef).where('paymentStats', '==', 2).get()).size
+
+        if (userExist == 1) throw { status: 409, code: 'ERR_DATA_EXIST', messages: "User already enroll to this course!" }
+        if (enrollCount >= quota) throw { status: 429, code: 'ERR_DATA_LIMIT', messages: "Enroll in the course has reached the limit" }
 
         const enrollData = {
             course: courseRef,
             user: userRef,
-            paymentStats: courses.price > 0 ? req.body.paymentStats : null,
+            paymentStats: courses.price === 0 ? 2 : 1,
             paymentPics: courses.price > 0 ? req.body.paymentPics : null,
             completion: 0
         }
