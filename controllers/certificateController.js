@@ -113,7 +113,7 @@ exports.create = async (req, res) => {
         }
 
         const certificate   = {
-            number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000) + 1}`,
+            number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 1000)}`,
             signatureDate: moment().locale('id').unix(),
             title: `${courseData.title}`,
             userId: `${userId}`,
@@ -143,11 +143,74 @@ exports.create = async (req, res) => {
     }
 }
 
+exports.createAny = async (req, res) => {
+    try {
+        const courseId        = req.body.courseId
+        const participantData = req.body.participantData
+
+        if (!Array.isArray(participantData)) throw { status: 400, code: 'ERR_BAD_REQUEST', messages: 'ParticipantData must be array!' }
+
+        res.status(200).send('Coming soon...')
+
+        // const year     = moment().tz("Asia/Jakarta").format("YYYY")
+        // const courseId = db.doc(`courses/${courseId}`)
+        // const participant = await db.collection("participant").where('course', '==', courseId).get()
+
+        // if (participant.size > 0) {
+        //     const bulkUpdate = await Promise.all(participant.docs.map(async doc => {
+        //         const courseData    = await (await (doc.data().course).get()).data()
+        //         const courseId      = await (await (doc.data().course).get()).id
+        //         const userId        = await (await (doc.data().user).get()).id
+
+        //         const sDate     = moment.unix(courseData.startDate).locale('id').tz("Asia/Jakarta")
+        //         const eDate     = moment.unix(courseData.endDate).locale('id').tz("Asia/Jakarta")
+        
+        //         let date
+        //         if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
+        //             date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
+        //         } else {
+        //             date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
+        //         }
+        
+        //         const certificate   = {
+        //             number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000) + 1}`,
+        //             signatureDate: moment().locale('id').unix(),
+        //             title: `${courseData.title}`,
+        //             courseId: courseId,
+        //             userId: `${userId}`,
+        //             date
+        //         }
+
+        //         await doc.ref.update({
+        //             completion: 1,
+        //             certificate
+        //         })
+
+        //         return certificate
+        //     }))
+
+        //     if (bulkUpdate.length > 0) {
+        //         res.status(200).json({
+        //             code: 'OK',
+        //             message: `Success creating certificate for courseId ${req.params.courseId}.`,
+        //         })
+        //     }
+        // }
+
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
 exports.createAll = async (req, res) => {
     try {
         const year     = moment().tz("Asia/Jakarta").format("YYYY")
-        const courseId = db.doc(`courses/${req.params.courseId}`)
-        const participant = await db.collection("participant").where('course', '==', courseId).get()
+        const courseId = db.doc(`courses/${req.body.courseId}`)
+        const participant = await db.collection("participant").where('course', '==', courseId).where('paymentStats', '==', 2).get()
 
         if (participant.size > 0) {
             const bulkUpdate = await Promise.all(participant.docs.map(async doc => {
@@ -166,7 +229,7 @@ exports.createAll = async (req, res) => {
                 }
         
                 const certificate   = {
-                    number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000) + 1}`,
+                    number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000)}`,
                     signatureDate: moment().locale('id').unix(),
                     title: `${courseData.title}`,
                     courseId: courseId,
@@ -185,7 +248,7 @@ exports.createAll = async (req, res) => {
             if (bulkUpdate.length > 0) {
                 res.status(200).json({
                     code: 'OK',
-                    message: `Success creating certificate for courseId ${req.params.courseId}.`,
+                    message: `Success creating certificate for courseId ${req.body.courseId}.`,
                 })
             }
         }
