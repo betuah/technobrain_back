@@ -87,8 +87,8 @@ exports.getEnrollUsers = async (req, res) => {
                 title: coursesData.title,
                 type: coursesData.courseType,
                 userId: userId,
-                fullName: usersData.fullName,
-                email: usersData.email,
+                fullName: usersData.fullName ? usersData.fullName : null,
+                email: usersData.email ? usersData.email : null,
                 participantId: doc.id,
                 completion: doc.data().completion,
                 paymentPics: doc.data().paymentPics,
@@ -109,6 +109,7 @@ exports.getEnrollUsers = async (req, res) => {
         })
     }
 }
+
 exports.enroll = async (req, res) => {
     try {
         const courseId   = req.body.courseId
@@ -144,6 +145,46 @@ exports.enroll = async (req, res) => {
         res.status(200).json({
             code: "OK",
             message: "Data has been saved!",
+        })
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
+exports.delOnceParticipant = async (req, res) => {
+    try {
+        const resDel = await db.collection('participant').doc(`${req.params.participantId}`).delete()
+
+        if (resDel) return res.status(200).json({
+            code: "OK",
+            message: "Course has been delete!",
+        })
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
+exports.delCourse = async (req, res) => {
+    try {
+        const courseId  = req.params.courseId
+        const courseRef = db.doc(`courses/${courseId}`)
+        const enrolled  = await db.collection("participant").where('course', '==', courseRef).get()
+
+        if (enrolled.size > 0) throw { status: 400, code: 'ERR_DEL_PARTICIPANT_EXIST', messages: "This course has participant!" }
+
+        const resDel = await db.collection('courses').doc(`${courseId}`).delete()
+
+        if (resDel) return res.status(200).json({
+            code: "OK",
+            message: "Course has been delete!",
         })
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))

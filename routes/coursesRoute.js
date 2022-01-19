@@ -13,4 +13,10 @@ module.exports = (app) => {
         
     app.route('/api/v1/course/enroll')
         .post(course.enroll)
+
+    app.route('/api/v1/course/course/:courseId')
+        .delete(course.getEnrollUsers)
+
+    app.route('/api/v1/course/enroll/:participantId')
+        .delete(course.delOnceParticipant)
 }
