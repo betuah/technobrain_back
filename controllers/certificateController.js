@@ -52,7 +52,7 @@ exports.getCertificate = async (req, res) => {
 
         if (participant === undefined) throw { status: 404, code: 'ERR_DATA_NOT_FOUND', messages: 'Participant not found!' } 
 
-        const users         = await (await participant.user.get()).data()
+        const users = await (await participant.user.get()).data()
     
         if (participant.completion == 0) throw { status: 404, code: 'ERR_DATA_NOT_COMPLETE', messages: 'Participant not complete the course.' } 
     
@@ -145,58 +145,61 @@ exports.create = async (req, res) => {
 
 exports.createAny = async (req, res) => {
     try {
-        const courseId        = req.body.courseId
         const participantData = req.body.participantData
+        const batch           = db.batch()
+        const year            = moment().tz("Asia/Jakarta").format("YYYY")
 
         if (!Array.isArray(participantData)) throw { status: 400, code: 'ERR_BAD_REQUEST', messages: 'ParticipantData must be array!' }
 
-        res.status(200).send('Coming soon...')
+        let errorData = []
+        const bulkUpdate = await Promise.all(participantData.map(async participantId => {
+            const doc         = db.collection("participant").doc(`${participantId}`)
+            const participant = await doc.get()
 
-        // const year     = moment().tz("Asia/Jakarta").format("YYYY")
-        // const courseId = db.doc(`courses/${courseId}`)
-        // const participant = await db.collection("participant").where('course', '==', courseId).get()
+            if (participant.data() === undefined) return errorData.push(participantId)
 
-        // if (participant.size > 0) {
-        //     const bulkUpdate = await Promise.all(participant.docs.map(async doc => {
-        //         const courseData    = await (await (doc.data().course).get()).data()
-        //         const courseId      = await (await (doc.data().course).get()).id
-        //         const userId        = await (await (doc.data().user).get()).id
+            const courseData  = await (await (participant.data().course).get()).data()
+            const courseId    = await (await (participant.data().course).get()).id
+            const userId      = await (await (participant.data().user).get()).id
+            const sDate       = moment.unix(courseData.startDate).locale('id').tz("Asia/Jakarta")
+            const eDate       = moment.unix(courseData.endDate).locale('id').tz("Asia/Jakarta")
 
-        //         const sDate     = moment.unix(courseData.startDate).locale('id').tz("Asia/Jakarta")
-        //         const eDate     = moment.unix(courseData.endDate).locale('id').tz("Asia/Jakarta")
-        
-        //         let date
-        //         if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
-        //             date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
-        //         } else {
-        //             date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
-        //         }
-        
-        //         const certificate   = {
-        //             number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000) + 1}`,
-        //             signatureDate: moment().locale('id').unix(),
-        //             title: `${courseData.title}`,
-        //             courseId: courseId,
-        //             userId: `${userId}`,
-        //             date
-        //         }
+            let date
+            if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
+                date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
+            } else {
+                date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
+            }
 
-        //         await doc.ref.update({
-        //             completion: 1,
-        //             certificate
-        //         })
+            const certificate   = {
+                number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000) + 1}`,
+                signatureDate: moment().locale('id').unix(),
+                title: `${courseData.title}`,
+                courseId: courseId,
+                userId: `${userId}`,
+                date
+            }
+            
+            return batch.update(doc, {
+                completion: 1,
+                certificate
+            })
+        }))
 
-        //         return certificate
-        //     }))
+        if ((bulkUpdate.length > 0) && (errorData.length === 0)) {
+            await batch.commit()
 
-        //     if (bulkUpdate.length > 0) {
-        //         res.status(200).json({
-        //             code: 'OK',
-        //             message: `Success creating certificate for courseId ${req.params.courseId}.`,
-        //         })
-        //     }
-        // }
-
+            res.status(200).json({
+                code: 'OK',
+                message: `Success creating certificate!`,
+            })
+        } else {
+            throw {
+                status: 400,
+                code: 'ERR_GENERATE_CERTIFICATE',
+                messages: 'Some participantId is not found!'
+            }
+        }
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
         res.status(`${error.status ? error.status : 500}`).json({
