@@ -161,7 +161,7 @@ exports.delOnceParticipant = async (req, res) => {
 
         if (resDel) return res.status(200).json({
             code: "OK",
-            message: "Course has been delete!",
+            message: "Unenroll user success!",
         })
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
