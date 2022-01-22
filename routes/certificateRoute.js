@@ -2,13 +2,16 @@ const Certificate = require('../controllers/certificateController') // Import Au
 
 module.exports = (app) => {
 
-    app.route('/api/v1/certification')
+    app.route('/api/v1/certificate')
         .get(Certificate.index)
 
     app.route('/api/v1/certificate/:participantId')
         .get(Certificate.getCertificate)
+
+    app.route('/api/v1/certificate/course/:courseId')
+        .get(Certificate.getDataCertificateByCourse)
         
-    app.route('/api/v1/certification/:participantId')
+    app.route('/api/v1/certificate/:participantId')
         .post(Certificate.create)
 
     app.route('/api/v1/certificate/generate/any')
