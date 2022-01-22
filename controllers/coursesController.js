@@ -128,10 +128,10 @@ exports.enroll = async (req, res) => {
 
         const quota       = courses.quota
         const userExist   = (await db.collection("participant").where('course', '==', courseRef).where('user', '==', userRef).get()).size
-        const enrollCount = (await db.collection("participant").where('course', '==', courseRef).where('paymentStats', '==', 2).get()).size
+        const enrollCount = (await db.collection("participant").where('course', '==', courseRef).where('paymentStats', '!=', 0).get()).size
 
         if (userExist == 1) throw { status: 409, code: 'ERR_DATA_EXIST', messages: "User already enroll to this course!" }
-        if (enrollCount >= quota) throw { status: 429, code: 'ERR_DATA_LIMIT', messages: "Enroll in the course has reached the limit" }
+        if ((quota != 0) && (enrollCount >= quota)) throw { status: 429, code: 'ERR_DATA_LIMIT', messages: "Enroll in the course has reached the limit" }
 
         const enrollData = {
             course: courseRef,
@@ -146,6 +146,25 @@ exports.enroll = async (req, res) => {
         res.status(200).json({
             code: "OK",
             message: "Data has been saved!",
+        })
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
+exports.payment = async (req, res) => {
+    try {
+        const resDel = await db.collection('participant').doc(`${req.body.participantId}`).update({ 
+            paymentStats: req.body.paymentStats 
+        })
+
+        if (resDel) return res.status(200).json({
+            code: "OK",
+            message: "Data updated!",
         })
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))

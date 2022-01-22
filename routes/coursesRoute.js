@@ -13,9 +13,12 @@ module.exports = (app) => {
         
     app.route('/api/v1/course/enroll')
         .post(course.enroll)
+    
+    app.route('/api/v1/course/enroll/payment')
+        .post(course.payment)
 
     app.route('/api/v1/course/course/:courseId')
-        .delete(course.getEnrollUsers)
+        .delete(course.delCourse)
 
     app.route('/api/v1/course/enroll/:participantId')
         .delete(course.delOnceParticipant)
