@@ -33,6 +33,7 @@ exports.create = async (req, res) => {
         const courseData = {
             "courseCode": req.body.courseCode,
             "courseType": req.body.courseType,
+            "certificate": req.body.certificate,
             "title": req.body.title,
             "desc": req.body.desc,
             "level": req.body.level,
