@@ -26,7 +26,48 @@ exports.index = async (req, res) => {
             }
         }))
 
-        // console.log(participantData)
+        if (participantData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
+
+        res.status(200).json({
+            code: 'OK',
+            message: 'Recieved all data success.',
+            data: participantData
+        })
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
+exports.getDataCertificateByCourse = async (req, res) => {
+    try {
+        const courseRef       = db.doc(`courses/${req.params.courseId}`)
+        const participant     = await db.collection('participant')
+                                    .where('course', '==', courseRef)
+                                    .where('completion', '==', 1)
+                                    .get()
+        const participantData = await Promise.all(participant.docs.map(async doc => {
+            const user        = await (await doc.data().user.get()).data()
+            const course      = await (await doc.data().course.get()).data()
+
+            return {
+                id: doc.id,
+                certificate: doc.data().certificate,
+                completion: doc.data().completion,
+                user: {
+                    fullName : user.fullName,
+                    email : user.email
+                },
+                course: {
+                    title : course.title,
+                    courseType: course.courseType
+                }
+
+            }
+        }))
 
         if (participantData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
 
@@ -52,18 +93,18 @@ exports.getCertificate = async (req, res) => {
 
         if (participant === undefined) throw { status: 404, code: 'ERR_DATA_NOT_FOUND', messages: 'Participant not found!' } 
 
-        const users = await (await participant.user.get()).data()
-    
-        if (participant.completion == 0) throw { status: 404, code: 'ERR_DATA_NOT_COMPLETE', messages: 'Participant not complete the course.' } 
+        const users       = await (await participant.user.get()).data()
+        const courses     = await (await participant.course.get()).data()
+        if (courses.certificate == undefined || courses.certificate == null) throw { status: 400, code: 'ERR_DATA_CERT_TEMPLATE', messages: 'Required certificate template!' } 
+
+        if (participant.completion == 0) throw { status: 400, code: 'ERR_DATA_NOT_COMPLETE', messages: 'Participant not complete the course.' } 
     
         const data = {
-            ...participant.certificate,
-            name: users.fullName,
+            fullName: users.fullName,
+            courseTitle: courses.title,
+            certificateNumber: participant.certificate.number,
             participantId: `${participantId}`,
-            signatureDate: '05012022',
-            frontCertificate: 'front001001.png',
-            backCertificate: 'back001001.jpg',
-            fontCollor: '#504C69'
+            template: courses.certificate
         }
     
         const stream = res.writeHead(200, {
