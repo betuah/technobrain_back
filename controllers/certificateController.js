@@ -9,21 +9,21 @@ exports.index = async (req, res) => {
         const participantData = await Promise.all(participant.docs.map(async doc => {
             const user        = await (await doc.data().user.get()).data()
             const course      = await (await doc.data().course.get()).data()
-
-            return {
+            const data        = {
                 id: doc.id,
                 certificate: doc.data().certificate,
                 completion: doc.data().completion,
                 user: {
-                    fullName : user.fullName,
-                    email : user.email
+                    fullName : course === undefined ? '' : user.fullName,
+                    email : course === undefined ? '' : user.email
                 },
                 course: {
-                    title : course.title,
-                    courseType: course.courseType
+                    title : course === undefined ? '' : course.title,
+                    courseType: course === undefined ? '' : course.courseType
                 }
-
             }
+
+            return data
         }))
 
         if (participantData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
