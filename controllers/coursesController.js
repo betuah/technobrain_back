@@ -82,14 +82,14 @@ exports.getEnrollUsers = async (req, res) => {
             const coursesId   = await (await (doc.data().course).get()).id
             const usersData   = await (await (doc.data().user).get()).data()
             const userId      = await (await (doc.data().user).get()).id
-
+            
             return bodyData = {
                 courseId: coursesId,
                 title: coursesData.title,
                 type: coursesData.courseType,
                 userId: userId,
-                fullName: usersData.fullName ? usersData.fullName : null,
-                email: usersData.email ? usersData.email : null,
+                fullName: usersData === undefined ? '' : usersData.fullName,
+                email: usersData === undefined ? '' : usersData.email,
                 participantId: doc.id,
                 completion: doc.data().completion,
                 paymentPics: doc.data().paymentPics,
@@ -116,6 +116,8 @@ exports.enroll = async (req, res) => {
         const { courseId, userId, paymentPics }   = req.body
         const courseRef  = db.doc(`courses/${courseId}`)
         const userRef    = db.doc(`users/${userId}`)
+
+        console.log(courseId, userId, paymentPics)
 
         if (courseId === undefined || userId === undefined || paymentPics === undefined) throw { status: 422, code: 'ERR_UNPROCESABLE_ENTITY', messages: 'Your data cannot be process!'}
 
