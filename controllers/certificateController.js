@@ -8,16 +8,20 @@ exports.index = async (req, res) => {
         const participant     = await db.collection('participant').where('completion', '==', 1).get()
         const participantData = await Promise.all(participant.docs.map(async doc => {
             const user        = await (await doc.data().user.get()).data()
+            const userId      = await (await doc.data().user.get()).id
             const course      = await (await doc.data().course.get()).data()
+            const courseId    = await (await doc.data().course.get()).id
             const data        = {
                 id: doc.id,
                 certificate: doc.data().certificate,
                 completion: doc.data().completion,
                 user: {
+                    userId,
                     fullName : course === undefined ? '' : user.fullName,
                     email : course === undefined ? '' : user.email
                 },
                 course: {
+                    courseId,
                     title : course === undefined ? '' : course.title,
                     courseType: course === undefined ? '' : course.courseType
                 }
