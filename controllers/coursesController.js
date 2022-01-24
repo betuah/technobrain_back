@@ -82,8 +82,8 @@ exports.getAllEnrollUsers = async (req, res) => {
             
             return bodyData = {
                 courseId: coursesId,
-                title: coursesData.title,
-                type: coursesData.courseType,
+                title: coursesData === undefined ? '' : coursesData.title,
+                type: coursesData === undefined ? '' : coursesData.courseType,
                 userId: userId,
                 fullName: usersData === undefined ? '' : usersData.fullName,
                 email: usersData === undefined ? '' : usersData.email,
@@ -125,8 +125,8 @@ exports.getEnrollUsers = async (req, res) => {
             
             return bodyData = {
                 courseId: coursesId,
-                title: coursesData.title,
-                type: coursesData.courseType,
+                title: coursesData === undefined ? '' : coursesData.title,
+                type: coursesData === undefined ? '' : coursesData.courseType,
                 userId: userId,
                 fullName: usersData === undefined ? '' : usersData.fullName,
                 email: usersData === undefined ? '' : usersData.email,
