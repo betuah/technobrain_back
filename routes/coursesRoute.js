@@ -5,6 +5,9 @@ module.exports = (app) => {
     app.route('/api/v1/course/')
         .get(course.index)
 
+    app.route('/api/v1/course/enroll/all')
+        .get(course.getAllEnrollUsers)
+
     app.route('/api/v1/course/enroll/:courseId')
         .get(course.getEnrollUsers)
 
