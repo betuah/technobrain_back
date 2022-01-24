@@ -27,6 +27,7 @@ const generate = async (data, dataCallback, endCallback) => {
         const back            = `data:image/jpg;base64,${Buffer.from(backImage).toString('base64')}`
 
         const capitalizeName = name.split(" ")
+        console.log(capitalizeName)
         const fullName = capitalizeName.map((word) => { 
             if (word.length > 1) {
                 return word[0].toUpperCase() + word.substring(1)
