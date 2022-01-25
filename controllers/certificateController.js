@@ -91,11 +91,8 @@ exports.getDataCertificateByCourse = async (req, res) => {
 
 exports.getAws = async (req, res) => {
     try {
-        const arr = []
-        // const awsRefa       = db.doc(`courses/ebCITnFGitxVF0X7KCy9` )
-        // const awsRefb       = db.doc(`courses/vlqRQmtmt6MUrZ8qUsGN`)
-        const awsRefa       = db.doc(`courses/KJ27cmr4JosgSBHwFKyh` )
-        const awsRefb       = db.doc(`courses/Uga9MrhI3g6U3BfVIDI4`)
+        const awsRefa       = db.doc(`courses/ebCITnFGitxVF0X7KCy9` )
+        const awsRefb       = db.doc(`courses/vlqRQmtmt6MUrZ8qUsGN`)
         const participanta     = await db.collection('participant')
             .where('course', '==', awsRefa)
             .where('completion', '==', 1)
