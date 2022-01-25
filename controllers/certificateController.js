@@ -89,6 +89,50 @@ exports.getDataCertificateByCourse = async (req, res) => {
     }
 }
 
+exports.getAws = async (req, res) => {
+    try {
+        const awsRefa       = db.doc(`courses/ebCITnFGitxVF0X7KCy9` )
+        const awsRefb       = db.doc(`courses/vlqRQmtmt6MUrZ8qUsGN`)
+        const participant     = await db.collection('participant')
+                                    .where('course', '==', awsRefa)
+                                    .where('course', '==', awsRefb)
+                                    .get()
+        const participantData = await Promise.all(participant.docs.map(async doc => {
+            const user        = await (await doc.data().user.get()).data()
+            const course      = await (await doc.data().course.get()).data()
+
+            return {
+                id: doc.id,
+                certificate: doc.data().certificate,
+                completion: doc.data().completion,
+                user: {
+                    fullName : user.fullName,
+                    email : user.email
+                },
+                course: {
+                    title : course.title,
+                    courseType: course.courseType
+                }
+
+            }
+        }))
+
+        if (participantData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
+
+        res.status(200).json({
+            code: 'OK',
+            message: 'Recieved all data success.',
+            data: participantData
+        })
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
 exports.getCertificate = async (req, res) => {
     try {
         const participantId = req.params.participantId
