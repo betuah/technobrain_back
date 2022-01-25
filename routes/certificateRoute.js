@@ -5,6 +5,9 @@ module.exports = (app) => {
     app.route('/api/v1/certificate')
         .get(Certificate.index)
 
+    app.route('/api/v1/aws/certificate')
+        .get(Certificate.getAws)
+
     app.route('/api/v1/certificate/:participantId')
         .get(Certificate.getCertificate)
 
