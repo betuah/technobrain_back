@@ -13,6 +13,11 @@ const env = {
     db_type: process.env.DB_TYPE,
     log_path: process.env.LOG_PATH,
     cache_path: process.env.LOG_PATH,
+    midtrans: {
+        url: process.env.NODE_ENV === 'production' ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com",
+        clientKey: process.env.MIDTRANS_CLIENT_KEY,
+        serverKey: process.env.MIDTRANS_SERVER_KEY
+    },
     aws: {
         accessKeyId: process.env.AWS_ACCESS_KEY,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,

@@ -1,21 +1,18 @@
-const mongoose  = require('mongoose');
-const env       = require('../env');
-const conn      = mongoose.connection;
+const mongoose  = require('mongoose')
 
-const mongoConn = mongoose.connect(`mongodb://${env.mongoose.host}:${env.mongoose.port}/${env.mongoose.database}`, {
-    auth: { "authSource": "admin" },
-    user: env.mongoose.username,
-    pass: env.mongoose.password,
+const mongoConn = mongoose.createConnection(process.env.MONGO_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true, 
-    useCreateIndex: true,
-    useFindAndModify: false,
+    useUnifiedTopology: true,
     autoIndex: true
-}).then(() => {
-    return true
-}).catch((e) => {
-    console.log(e)
-    return false
 })
 
-module.exports = mongoConn;
+/**
+ * Checking Object ID
+ * @param {OjectId} id 
+ */
+ const isValidId = (id) => {
+    return mongoose.Types.ObjectId.isValid(id);
+}
+// End checking object id
+
+module.exports = { mongoConn, isValidId }
