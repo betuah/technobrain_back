@@ -18,7 +18,7 @@ app.disable("x-powered-by")
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 app.use(express.raw())
-app.use(express.static(__dirname + '/public')) // Public directory
+app.use("/public", express.static(__dirname + '/public')) // Public directory
 
 /* Start Logging */
 const log_path = env.log_path || path.join(__dirname, 'logs')

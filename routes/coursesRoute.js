@@ -11,6 +11,9 @@ module.exports = (app) => {
     app.route('/api/v1/course/enroll/:courseId')
         .get(course.getEnrollUsers)
 
+    app.route('/api/v1/course/export/:courseId')
+        .get(course.exportEnrollUsers)
+
     app.route('/api/v1/course/')
         .post(course.create)
         
