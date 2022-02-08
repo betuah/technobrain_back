@@ -10,6 +10,9 @@ module.exports = (app) => {
 
     app.route('/api/v1/auth/signin')
         .post(schema.signinBody, validate, auth.signin)
+    
+    app.route('/api/v1/auth/google')
+        .post(auth.google)
 
     app.route('/api/v1/auth/signup')
         .post(schema.signUp, validate, auth.signUp)
