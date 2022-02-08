@@ -5,6 +5,10 @@ const signUpSchema = {
     type: "object",
     required: ["fullName", "email", "password"],
     properties: {
+        signInAs: {
+            type: "string",
+            enum: ["mentor","user"]
+        },
         fullName: {
             type: "string",
         },
