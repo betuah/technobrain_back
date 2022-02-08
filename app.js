@@ -54,7 +54,8 @@ app.use(morgan('combined', {
 //     },
 //     credentials: true
 // }
-// app.use(cors(options)) 
+// app.use(cors(options))
+app.use(cors())
 /* End Dynamic CORS */
 
 /* Start Cookie Settings */
