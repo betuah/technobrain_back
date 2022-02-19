@@ -23,8 +23,6 @@ const generate = async (data, dataCallback, endCallback) => {
         const template        = data.template
         const frontImage      = (await axios.get(`${template.front}`, { responseType: 'arraybuffer' })).data
         const front           = `data:image/jpg;base64,${Buffer.from(frontImage).toString('base64')}`
-        const backImage       = (await axios.get(`${template.back}`, { responseType: 'arraybuffer' })).data
-        const back            = `data:image/jpg;base64,${Buffer.from(backImage).toString('base64')}`
 
         const capitalizeName = name.split(" ")
         const fullName = capitalizeName.map((word) => { 
@@ -52,6 +50,11 @@ const generate = async (data, dataCallback, endCallback) => {
                 align: `${template.name.align}`
             })
 
+        if (template.back === null) return doc.end()
+
+        const backImage       = (await axios.get(`${template.back}`, { responseType: 'arraybuffer' })).data
+        const back            = `data:image/jpg;base64,${Buffer.from(backImage).toString('base64')}`
+
         doc.addPage({
             size: 'A4',
             layout: 'landscape'
@@ -72,11 +75,9 @@ const generate = async (data, dataCallback, endCallback) => {
 
         doc.end()
     } catch (error) {
-        console.log(error)
-        doc.end()
+        console.log(new Error(error))
+        doc.end(error)
     }
-
-    
 }
 
 const imageEncode = (arrayBuffer) => {
