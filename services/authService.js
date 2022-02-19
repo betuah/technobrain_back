@@ -35,7 +35,7 @@ const generateRefreshToken = (user) => {
 
 // Start verifying refreshToken
 const getRefreshToken = async (token) => {
-    const refreshToken = await refTokenData.findOne({ token }).populate('users')
+    const refreshToken = await refTokenData.findOne({ token }).populate('user')
     if (!refreshToken || !refreshToken.isActive) throw 'Invalid token'
     return refreshToken
 }
