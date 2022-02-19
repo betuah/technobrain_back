@@ -45,7 +45,7 @@ exports.signin = async (req, res) => {
 exports.google = async (req, res) => {
     try {
         if (req.body.grant_type === 'refresh_token') {
-            const token = req.cookies['auth._refresh_token.local' || 'auth._refresh_token.google' || 'refresh_token']
+            const token = req.body.refresh_token
             console.log(req.body, token)
 
             refreshToken({ token })
