@@ -1,6 +1,27 @@
 const mongoose  = require('../config/database/mongoose')
 const Schema = mongoose.Schema
 
+const itemDetailSchema = new Schema({
+   item_id: {
+      type: String,
+      trim: true,
+      require: true
+   },
+   name: {
+      type: String,
+      trim: true,
+      require: true
+   },
+   price: {
+      type: Number,
+      require: true
+   },
+   qty: {
+      type: Number,
+      require: true
+   }
+})
+
 const paymentSchema = new Schema({
    payment_type: {
       type: String,
@@ -13,6 +34,7 @@ const paymentSchema = new Schema({
       trim: true,
       require: true
    },
+   item_details: [itemDetailSchema],
    gross_amount: {
       type: Number,
       require: true
