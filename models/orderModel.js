@@ -36,6 +36,6 @@ paymentSchema.set('toJSON', {
    }
 });
 
-const usersData = mongoConnLms.model('orders', paymentSchema)
+const ordersData = mongoConnLms.model('orders', paymentSchema)
 
-module.exports = usersData
+module.exports = ordersData
