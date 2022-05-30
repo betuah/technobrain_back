@@ -1,5 +1,5 @@
 
-exports.index = async (req, res) {
+exports.index = async (req, res) => {
    try {
       const {payment_type, customer_details, item_details} = req.body
       let paymentMethod = {}
