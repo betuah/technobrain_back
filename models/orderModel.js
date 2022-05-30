@@ -25,8 +25,7 @@ const itemDetailSchema = new Schema({
 const paymentSchema = new Schema({
    payment_type: {
       type: String,
-      enum: ['bank_transfer', 'echannel'],
-      default: 'bank_transfer',
+      enum: ['bca', 'bni','bri','mandiri'],
       require: true,
    },
    order_id: {
@@ -41,7 +40,7 @@ const paymentSchema = new Schema({
    },
    bank: {
       type: String,
-      enum: ['bca', 'bni','bri','mandiri']
+      enum: []
    },
    customer: {
       type: mongoose.Schema.Types.ObjectId,
