@@ -1,31 +1,10 @@
-const mongoose  = require('../config/database/mongoose')
+const mongoose = require('mongoose')
 const Schema = mongoose.Schema
-
-const itemDetailSchema = new Schema({
-   item_id: {
-      type: String,
-      trim: true,
-      require: true
-   },
-   name: {
-      type: String,
-      trim: true,
-      require: true
-   },
-   price: {
-      type: Number,
-      require: true
-   },
-   qty: {
-      type: Number,
-      require: true
-   }
-})
 
 const paymentSchema = new Schema({
    payment_type: {
       type: String,
-      enum: ['bca', 'bni','bri','mandiri'],
+      enum: ['bank_transfer'],
       require: true,
    },
    order_id: {
@@ -33,19 +12,29 @@ const paymentSchema = new Schema({
       trim: true,
       require: true
    },
-   item_details: [itemDetailSchema],
+   items: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'courses',
+   }],
    gross_amount: {
       type: Number,
       require: true
    },
    bank: {
       type: String,
-      enum: []
+      enum: ['bca', 'bni','bri','mandiri']
    },
    customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'users'
+      ref: 'customers'
+   },
+   payment_status: {
+      type: Number,
+      trim: true
    }
+}, { 
+   timestamps: true, 
+   collection : 'orders' 
 })
 
 paymentSchema.set('toJSON', {
@@ -57,6 +46,6 @@ paymentSchema.set('toJSON', {
    }
 });
 
-const ordersData = mongoConnLms.model('orders', paymentSchema)
+const ordersData = mongoose.model('orders', paymentSchema)
 
 module.exports = ordersData

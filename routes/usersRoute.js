@@ -5,7 +5,7 @@ module.exports = (app) => {
     app.route('/api/v1/users/')
         .get(user.index)
 
-    app.route('/api/v1/users/')
+    app.route('/api/v1/user/create')
         .post(user.create)
 
 }

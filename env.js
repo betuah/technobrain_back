@@ -13,6 +13,8 @@ const env = {
     db_type: process.env.DB_TYPE,
     log_path: process.env.LOG_PATH,
     cache_path: process.env.LOG_PATH,
+    midtrans_uri: process.env.MIDTRANS_URI,
+    midtrans_server_key: process.env.MIDTRANS_SERVER_KEY,
     aws: {
         accessKeyId: process.env.AWS_ACCESS_KEY,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,

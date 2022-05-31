@@ -1,24 +1,13 @@
-const firebaseAdmin = require('../config/firebaseAdminConfig')
-const db            = firebaseAdmin.firestore()
+const User = require('../models/usersModel')
 
 exports.index = async (req, res) => {
     try {
-        const users     = await db.collection('users').get()
-        const usersData = await Promise.all(users.docs.map(async doc => {
-            const rules   = await (await doc.data().rules.get()).data()
-            return {
-                ...doc.data(),
-                rules: rules,
-                userId: doc.id
+        User.find().then(data => {
+            if (data.length > 0) {
+                res.status(200).json(data)
+            } else {
+                res.status(404).json('Tidak ada user.')
             }
-        }))
-
-        if (usersData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
-
-        res.status(200).json({
-            code: 'OK',
-            message: 'Recieved all data success.',
-            data: usersData
         })
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
@@ -31,29 +20,20 @@ exports.index = async (req, res) => {
 
 exports.create = async (req, res) => {
     try {
-        const rules = db.doc(`rules/${4}`)
+        const { email, first_name, last_name, phone_number, institution, profession } = req.body
 
-        const usersData = {
-            email       : req.body.email,
-            fullName    : req.body.fullName,
-            phone       : req.body.phone,
-            profilePics : req.body.profilePics,
-            profession  : req.body.profession,
-            institution : req.body.institution,
-            rules       : rules
+        const userData = {
+            email,
+            fullName : `${first_name} ${last_name}`,
+            phone_number,
+            profession,
+            institution
         }
 
-        const resData = await db.collection('users').add(usersData)
-
-        delete usersData.rules
-
-        res.status(200).json({
-            code: 'OK',
-            message: 'Your data has been saved.',
-            data: {
-                userId: resData.id,
-                ...usersData
-            }
+        User.create(userData).then(data => {
+            res.status(200).json(data)
+        }).catch(e => {
+            res.status(400).send('Penambahan user gagal!')
         })
     } catch (error) {
         console.log(new Error(error.message ? error.message : error))

@@ -65,24 +65,18 @@ app.use(cookieParser())
 const certificateRoute  = require('./routes/certificateRoute')
 const courceRoute       = require('./routes/coursesRoute')
 const usersRoute        = require('./routes/usersRoute')
+const orderRoute        = require('./routes/orderRoute')
 
 certificateRoute(app)
 courceRoute(app)
 usersRoute(app)
+orderRoute(app)
 /* End of Routing Modules */
 
 /* Start Database Connection Check */
-let conn
-if (env.db_type) {
-    if (env.db_type === 'mongodb') {
-        conn = require('./config/database/mongoose')
-    } else {
-        const { dbConn } = require('./config/database/sequelize')
-        conn = dbConn
-    }
-}
-
-// if(conn) {
+const mongoConn = require('./config/database/mongoose')
+mongoConn.on("error", console.error.bind(console, "connection to database error error: "));
+mongoConn.once("open", function () {
     if (env.node_env === 'production') {
         try {
             const privateKey  = fs.readFileSync(`${env.httpsPrivateKey}`, 'utf8')
@@ -97,9 +91,7 @@ if (env.db_type) {
     } else {
         app.listen(port, () => console.log(`Server API listen on YOUR_HOST:${env.port}`))
     }
-// } else {
-//     console.log(`${env.host}:${env.port} cannot connect to the Database ${env.db_type}!`)
-// }
+});
 /* End Database Connection Check */
 
 module.exports = app
