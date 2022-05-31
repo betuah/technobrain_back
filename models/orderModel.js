@@ -24,6 +24,10 @@ const paymentSchema = new Schema({
       type: String,
       enum: ['bca', 'bni','bri','mandiri']
    },
+   va_number: {
+      type: String,
+      trim: true
+   },
    customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'customers'

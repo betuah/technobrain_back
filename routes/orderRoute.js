@@ -2,6 +2,9 @@ const order = require('../controllers/orderController') // Import Auth Controlle
 
 module.exports = (app) => {
 
+   app.route('/api/v1/order/:order_id')
+      .get(order.getOrderById)
+
    app.route('/api/v1/order/create')
       .post(order.create)
    
