@@ -65,85 +65,92 @@ exports.create = async (req, res) => {
       const courseData = await Course.find({
          '_id': { $in: items.map(id => mongoose.Types.ObjectId(`${id}`)) }
       })
-      const gross_amount = courseData.reduce((sum, { course_price }) => sum + course_price, 0)
+      if ((courseData.length > 0) && (items.length == courseData.length)) {
+         const gross_amount = courseData.reduce((sum, { course_price }) => sum + course_price, 0)
 
-      const session = await mongoose.startSession()
-      session.startTransaction()
+         const session = await mongoose.startSession()
+         session.startTransaction()
 
-      const midtransReq = {
-         payment_type,
-         transaction_details: { order_id, gross_amount },
-         bank_transfer: { bank },
-         custom_expiry: {
-            expiry_duration: 12,
-            unit: "hour"
-         },
-         item_details: courseData.map(cData => {
-            return {
-               id: cData.course_id,
-               price: cData.course_price,
-               quantity: 1,
-               name: cData.course_title
-            }
-         }),
-         customer_details: {
-            first_name,
-            last_name,
-            email
-         }
-      }
-
-      axios.post(`${env.midtrans_uri}/charge`, midtransReq ,{
-         auth: {
-            username: env.midtrans_server_key,
-            password: ""
-         }
-      }).then(async response => {
-         try {
-            const orderData = {
-               order_id,
-               payment_type,
-               payment_status: 0,
-               items: items.map(id => mongoose.Types.ObjectId(`${id}`)),
-               bank,
-               va_number: response.data.va_numbers[0].va_number,
-               gross_amount
-            }
-      
-            const customerData = {
-               email,
-               fullName : `${first_name} ${last_name}`,
-               phone_number,
-               profession,
-               institution
-            }
-            
-            const customerRes = await User.create(customerData)
-            const orderRes = await Order.create({
-               ...orderData,
-               customer: customerRes._id
-            }),
-            courseCondition = items.map(ids => {
+         const midtransReq = {
+            payment_type,
+            transaction_details: { order_id, gross_amount },
+            bank_transfer: { bank },
+            custom_expiry: {
+               expiry_duration: 12,
+               unit: "hour"
+            },
+            item_details: courseData.map(cData => {
                return {
-                  _id: mongoose.Types.ObjectId(`${ids}`)
+                  id: cData.course_id,
+                  price: cData.course_price,
+                  quantity: 1,
+                  name: cData.course_title
                }
-            })
-            
-            await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, } }})
-            await session.commitTransaction()
-         
-            session.endSession()
-            res.json(response.data)
-         } catch (error) {
-            console.error(error, 'abort transaction')
-            res.send('Transaction Error')
-            await session.abortTransaction()
+            }),
+            customer_details: {
+               first_name,
+               last_name,
+               email
+            }
          }
-      }).catch(async e =>{
-         console.log(e, 'Order error')
-         await session.abortTransaction()
-         res.send('Order Failed!')
-      })
+
+         console.log(midtransReq, items, courseData.length)
+   
+         axios.post(`${env.midtrans_uri}/charge`, midtransReq ,{
+            auth: {
+               username: env.midtrans_server_key,
+               password: ""
+            }
+         }).then(async response => {
+            console.log(response.data)
+            try {
+               const orderData = {
+                  order_id,
+                  payment_type,
+                  payment_status: 0,
+                  items: items.map(id => mongoose.Types.ObjectId(`${id}`)),
+                  bank,
+                  va_number: response.data.va_numbers[0].va_number,
+                  gross_amount
+               }
+         
+               const customerData = {
+                  email,
+                  fullName : `${first_name} ${last_name}`,
+                  phone_number,
+                  profession,
+                  institution
+               }
+               
+               const customerRes = await User.create(customerData)
+               const orderRes = await Order.create({
+                  ...orderData,
+                  customer: customerRes._id
+               }),
+               courseCondition = items.map(ids => {
+                  return {
+                     _id: mongoose.Types.ObjectId(`${ids}`)
+                  }
+               })
+               
+               await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, } }})
+               await session.commitTransaction()
+            
+               session.endSession()
+               res.json(response.data)
+            } catch (error) {
+               console.error(error, 'abort transaction')
+               res.send('Transaction Error')
+               await session.abortTransaction()
+            }
+         }).catch(async e =>{
+            console.log('Order error', e.response && e.response)
+            await session.abortTransaction()
+            res.send('Order Failed!')
+         })
+      } else {
+         res.send('Course Tidak ditemukan.')
+      }
    } catch (error) {
       console.log(error)
       res.status(500).send('Internal Server Error')
