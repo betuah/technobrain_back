@@ -14,10 +14,10 @@ const sendMail = (sendTo, subject, content) => new Promise(async (resolve, rejec
    }
 
    transporter().sendMail(mailOptions).then(info => {
-      console.log('success')
+      console.log('Mail Sent!')
       resolve(info)
    }).catch(err => {
-      console.log('error')
+      console.log('Sending email error')
       reject(err)
    })
 })

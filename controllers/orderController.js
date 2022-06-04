@@ -75,6 +75,15 @@ exports.create = async (req, res) => {
          const session = await mongoose.startSession()
          session.startTransaction()
 
+         item_details = courseData.map(cData => {
+            return {
+               id: cData.course_id,
+               price: cData.course_price,
+               quantity: 1,
+               name: cData.course_title
+            }
+         })
+
          const midtransReq = {
             payment_type,
             transaction_details: { order_id, gross_amount },
@@ -83,14 +92,7 @@ exports.create = async (req, res) => {
                expiry_duration: 12,
                unit: "hour"
             },
-            item_details: courseData.map(cData => {
-               return {
-                  id: cData.course_id,
-                  price: cData.course_price,
-                  quantity: 1,
-                  name: cData.course_title
-               }
-            }),
+            item_details,
             customer_details: {
                first_name,
                last_name,
@@ -101,14 +103,15 @@ exports.create = async (req, res) => {
          // console.log(midtransReq, items, courseData.length)
 
          try {
-         
+            let mitrans_res = null
             if (payment_type == 'bank_transfer') {
-               await axios.post(`${env.midtrans_uri}/charge`, midtransReq ,{
+               const mitrans_result = await axios.post(`${env.midtrans_uri}/charge`, midtransReq ,{
                   auth: {
                      username: env.midtrans_server_key,
                      password: ""
                   }
                })
+               mitrans_res = mitrans_result
             }
             
             const orderData = {
@@ -117,7 +120,7 @@ exports.create = async (req, res) => {
                payment_status: 0,
                items: items.map(id => mongoose.Types.ObjectId(`${id}`)),
                bank,
-               va_number: response.data.va_numbers[0].va_number,
+               va_number: payment_type == 'bank_transfer' ? mitrans_res.data.va_numbers[0].va_number : '',
                gross_amount: payment_type == 'bank_transfer' ? gross_amount : gross_amount + unik
             }
             
@@ -144,12 +147,12 @@ exports.create = async (req, res) => {
             await session.commitTransaction()
 
             if (payment_type != 'bank_transfer') {
-               let content = mail_template(order_id, fullName, `${cData.course_title}`, cData.course_price, unik, gross_amount, '27 Mei 2022')
-               await sendMail(email, `Menunggu Pembayaran - ${cData.course_title}`, content)
+               let content = mail_template(order_id, `${first_name} ${last_name}`, `${item_details[0].name}`, item_details[0].price, unik, orderData.gross_amount, moment().locale('id').format('LL'))
+               await sendMail(email, `Menunggu Pembayaran - ${item_details[0].name}`, content)
             }
          
             session.endSession()
-            res.json(response.data)
+            res.json(orderRes)
          } catch (error) {
             console.log('Order error', error.response ? error.response : error)
             await session.abortTransaction()

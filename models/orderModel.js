@@ -4,7 +4,7 @@ const Schema = mongoose.Schema
 const paymentSchema = new Schema({
    payment_type: {
       type: String,
-      enum: ['bank_transfer'],
+      enum: ['bank_transfer','manual'],
       require: true,
    },
    order_id: {
