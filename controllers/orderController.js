@@ -158,7 +158,7 @@ exports.create = async (req, res) => {
          } catch (error) {
             console.log('Order error', error.response ? error.response : error)
             await session.abortTransaction()
-            res.send('Order Failed!')
+            res.status(400).send('Order Failed!')
          }
       } else {
          res.send('Course Tidak ditemukan.')
