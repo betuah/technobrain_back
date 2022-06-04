@@ -210,7 +210,7 @@ const mail_template = (order_id ,name, course_title, price, unik, total, created
    </table></td>
    </tr>
    <tr>
-   <td align="left" class="es-m-txt-r" style="Margin:0;padding-top:10px;padding-bottom:20px;padding-right:20px;padding-left:40px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333;font-size:14px">Jika sudah melakukan pembayaran anda dapat konfirmasi pembayaran dengan mengirim foto bukti pembayaran ke nomor whatsapp&nbsp;<strong>081290654582</strong>.</p></td>
+   <td align="left" class="es-m-txt-r" style="Margin:0;padding-top:10px;padding-bottom:20px;padding-right:20px;padding-left:40px"><p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:arial, 'helvetica neue', helvetica, sans-serif;line-height:21px;color:#333333;font-size:14px"><strong>Mohon untuk mentransfer sesuai dengan jumlah total untuk memudahkan pengecekan.</strong> Jika sudah melakukan pembayaran anda dapat konfirmasi pembayaran dengan mengirim foto bukti pembayaran ke nomor whatsapp&nbsp;<strong>081290654582</strong>.</p></td>
    </tr>
    </table></td>
    </tr>
