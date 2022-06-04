@@ -113,6 +113,8 @@ exports.create = async (req, res) => {
                })
                mitrans_res = mitrans_result
             }
+
+            if (mitrans_res != null && mitrans_res.data.status_code > 205) throw new Error(mitrans_res.data.status_message)
             
             const orderData = {
                order_id,
