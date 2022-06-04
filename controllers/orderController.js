@@ -144,13 +144,13 @@ exports.create = async (req, res) => {
             })
             
             await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, } }})
-            await session.commitTransaction()
-
+            
             if (payment_type != 'bank_transfer') {
                let content = mail_template(order_id, `${first_name} ${last_name}`, `${item_details[0].name}`, item_details[0].price, unik, orderData.gross_amount, moment().locale('id').format('LL'))
                await sendMail(email, `Menunggu Pembayaran - ${item_details[0].name}`, content)
             }
-         
+            
+            await session.commitTransaction()
             session.endSession()
             res.json(orderRes)
          } catch (error) {
