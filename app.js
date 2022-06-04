@@ -74,8 +74,11 @@ orderRoute(app)
 /* End of Routing Modules */
 
 /* Start Database Connection Check */
-const mongoConn = require('./config/database/mongoose')
-mongoConn.on("error", console.error.bind(console, "connection to database error error: "));
+const { mongoConn, mongoose } = require('./config/database/mongoose')
+mongoConn.on("error", err => {
+    console.error.bind(console, "connection to database error error: ")
+    mongoose.disconnect()
+});
 mongoConn.once("open", function () {
     if (env.node_env === 'production') {
         try {

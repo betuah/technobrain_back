@@ -5,6 +5,9 @@ const User = require('../models/usersModel')
 const Order = require('../models/orderModel')
 const Course = require('../models/courseModel')
 const env = require('../env')
+const sendMail = require('../services/mail')
+const moment = require('moment')
+const mail_template = require('../config/mail_template')
 
 exports.index = async (req, res) => {
    Order.find({}).populate({ path: 'items', model: 'courses'}).then(resData => {
@@ -62,6 +65,7 @@ exports.create = async (req, res) => {
       const { payment_type, items, bank } = order_details
 
       const order_id = `aws-${Math.floor(Math.random() * 100000 + 1)}`
+      const unik = Math.floor(Math.random() * 1000 + 1)
       const courseData = await Course.find({
          '_id': { $in: items.map(id => mongoose.Types.ObjectId(`${id}`)) }
       })
@@ -94,60 +98,63 @@ exports.create = async (req, res) => {
             }
          }
 
-         console.log(midtransReq, items, courseData.length)
-   
-         axios.post(`${env.midtrans_uri}/charge`, midtransReq ,{
-            auth: {
-               username: env.midtrans_server_key,
-               password: ""
-            }
-         }).then(async response => {
-            console.log(response.data)
-            try {
-               const orderData = {
-                  order_id,
-                  payment_type,
-                  payment_status: 0,
-                  items: items.map(id => mongoose.Types.ObjectId(`${id}`)),
-                  bank,
-                  va_number: response.data.va_numbers[0].va_number,
-                  gross_amount
-               }
+         // console.log(midtransReq, items, courseData.length)
+
+         try {
          
-               const customerData = {
-                  email,
-                  fullName : `${first_name} ${last_name}`,
-                  phone_number,
-                  profession,
-                  institution
-               }
-               
-               const customerRes = await User.create(customerData)
-               const orderRes = await Order.create({
-                  ...orderData,
-                  customer: customerRes._id
-               }),
-               courseCondition = items.map(ids => {
-                  return {
-                     _id: mongoose.Types.ObjectId(`${ids}`)
+            if (payment_type == 'bank_transfer') {
+               await axios.post(`${env.midtrans_uri}/charge`, midtransReq ,{
+                  auth: {
+                     username: env.midtrans_server_key,
+                     password: ""
                   }
                })
-               
-               await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, } }})
-               await session.commitTransaction()
-            
-               session.endSession()
-               res.json(response.data)
-            } catch (error) {
-               console.error(error, 'abort transaction')
-               res.send('Transaction Error')
-               await session.abortTransaction()
             }
-         }).catch(async e =>{
-            console.log('Order error', e.response && e.response)
+            
+            const orderData = {
+               order_id,
+               payment_type,
+               payment_status: 0,
+               items: items.map(id => mongoose.Types.ObjectId(`${id}`)),
+               bank,
+               va_number: response.data.va_numbers[0].va_number,
+               gross_amount: payment_type == 'bank_transfer' ? gross_amount : gross_amount + unik
+            }
+            
+            const customerData = {
+               email,
+               fullName : `${first_name} ${last_name}`,
+               phone_number,
+               profession,
+               institution
+            }
+            
+            const customerRes = await User.create(customerData)
+            const orderRes = await Order.create({
+               ...orderData,
+               customer: customerRes._id
+            }),
+            courseCondition = items.map(ids => {
+               return {
+                  _id: mongoose.Types.ObjectId(`${ids}`)
+               }
+            })
+            
+            await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, } }})
+            await session.commitTransaction()
+
+            if (payment_type != 'bank_transfer') {
+               let content = mail_template(order_id, fullName, `${cData.course_title}`, cData.course_price, unik, gross_amount, '27 Mei 2022')
+               await sendMail(email, `Menunggu Pembayaran - ${cData.course_title}`, content)
+            }
+         
+            session.endSession()
+            res.json(response.data)
+         } catch (error) {
+            console.log('Order error', error.response ? error.response : error)
             await session.abortTransaction()
             res.send('Order Failed!')
-         })
+         }
       } else {
          res.send('Course Tidak ditemukan.')
       }
@@ -189,5 +196,17 @@ exports.notif = async (req, res) => {
       })
    } else {
       res.send('Your data is not valid!')
+   }
+}
+
+exports.testMail = async (req, res) => {
+   try {
+      let content = mail_template('123123123','Betuah Anugerah', 'AWS - Technical Fundamental', '50.000', Math.floor(Math.random() * 1000 + 1), '50.000', moment().locale('id').format('LL'))
+
+      await sendMail('betuah@seamolec.org', 'Menunggu Pembayaran Pelatihan - AWS Technical Fundamental', content)
+      res.send('mail sent!')
+   } catch (error) {
+      console.log(error)
+      res.status(500).send('error')
    }
 }

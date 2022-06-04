@@ -1,16 +1,20 @@
 const nodemailer = require('nodemailer')
+const env = require('../env')
 
-const transporter = (data) => nodemailer.createTransport({
-    host: `${data.host}`,
-    port: data.port,
-    secure: data.secure,
+const mailConfig = {
+    pool: true,
+    host: env.mail.host,
+    port: env.mail.port,
+    secure: env.mail.tls ? false : true,
     auth: {
-        user: data.username,
-        pass: data.password
+        user: env.mail.user,
+        pass: env.mail.pass
     },
     tls: {
-        rejectUnauthorized: data.tls
+        rejectUnauthorized: false
     }
-});
+}
+
+const transporter = () => nodemailer.createTransport(mailConfig);
 
 module.exports = transporter
