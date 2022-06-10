@@ -1,7 +1,12 @@
 const pdf           = require('../services/PDFGenerator')
 const firebaseAdmin = require('../config/firebaseAdminConfig')
 const moment        = require('moment-timezone')
-const db            = firebaseAdmin.firestore()
+const db = firebaseAdmin.firestore()
+
+const mongoose = require('mongoose')
+const User = require('../models/usersModel')
+const Order = require('../models/orderModel')
+const Course = require('../models/courseModel')
 
 exports.index = async (req, res) => {
     try {
@@ -48,107 +53,95 @@ exports.index = async (req, res) => {
 
 exports.getDataCertificateByCourse = async (req, res) => {
     try {
-        const courseRef       = db.doc(`courses/${req.params.courseId}`)
-        const participant     = await db.collection('participant')
-                                    .where('course', '==', courseRef)
-                                    .where('completion', '==', 1)
-                                    .get()
-        const participantData = await Promise.all(participant.docs.map(async doc => {
-            const user        = await (await doc.data().user.get()).data()
-            const course      = await (await doc.data().course.get()).data()
-
-            return {
-                id: doc.id,
-                certificate: doc.data().certificate,
-                completion: doc.data().completion,
-                user: {
-                    fullName : user.fullName,
-                    email : user.email
-                },
-                course: {
-                    title : course.title,
-                    courseType: course.courseType
-                }
-
-            }
-        }))
-
-        if (participantData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
-
-        res.status(200).json({
-            code: 'OK',
-            message: 'Recieved all data success.',
-            data: participantData
-        })
-    } catch (error) {
-        console.log(new Error(error.messages ? error.messages : error.message))
-        res.status(`${error.status ? error.status : 500}`).json({
-            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
-            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
-        })
-    }
-}
-
-exports.getAws = async (req, res) => {
-    try {
-        const awsRefa       = db.doc(`courses/ebCITnFGitxVF0X7KCy9` )
-        const awsRefb       = db.doc(`courses/vlqRQmtmt6MUrZ8qUsGN`)
-        const participanta     = await db.collection('participant')
-            .where('course', '==', awsRefa)
-            .where('completion', '==', 1)
-            .get()
-        const participantb     = await db.collection('participant')
-            .where('course', '==', awsRefb)
-            .where('completion', '==', 1)
-            .get()
-
-        const dataa = await Promise.all(participanta.docs.map(async doc => {
-            const user        = await (await doc.data().user.get()).data()
-            const course      = await (await doc.data().course.get()).data()
-
-            return {
-                id: doc.id,
-                certificate: doc.data().certificate,
-                completion: doc.data().completion,
-                user: {
-                    fullName : user.fullName,
-                    email : user.email
-                },
-                course: {
-                    title : course.title,
-                    courseType: course.courseType
-                }
-
-            }
-        }))
-
-        const datab = await Promise.all(participantb.docs.map(async doc => {
-            const user        = await (await doc.data().user.get()).data()
-            const course      = await (await doc.data().course.get()).data()
-
-            return {
-                id: doc.id,
-                certificate: doc.data().certificate,
-                completion: doc.data().completion,
-                user: {
-                    fullName : user.fullName,
-                    email : user.email
-                },
-                course: {
-                    title : course.title,
-                    courseType: course.courseType
-                }
-
-            }
-        }))
-
-        let arrData = dataa.concat(datab)
-
-        res.status(200).json({
-            code: 'OK',
-            message: 'Recieved all data success.',
-            data: arrData
-        })
+        const courseData = await Course.findOne({ _id: mongoose.Types.ObjectId(`${req.params.courseId}`) })
+            .populate({ path: 'course_participant.participant_id', model: 'customers' })
+            .populate({ path: 'course_participant.order_id', model: 'orders' })
+        
+        if (courseData == null || courseData.course_participant.length == 0) throw {
+            code: 404,
+            status: 'ERR_NOT_FOUND',
+            messages: 'Course not found or no participant'
+        }
+        
+        const course_participant = courseData.course_participant.map(item => item).filter(item => (item.completion == 1 && item.order_id.payment_status == 1))
+        
+        res.json({
+            ...courseData._doc,
+            course_participant
+        });
+        // const data = 
+        // const courseData = await Course.aggregate([
+        //     { $match: { _id: mongoose.Types.ObjectId(`${req.params.courseId}`) } },
+        //     {
+        //         $project: {
+        //             course_id: 1,
+        //             course_title: 1,
+        //             participant: {
+        //                 $filter: {
+        //                     input: "$course_participant",
+        //                     as: "course_participant",
+        //                     cond: {
+        //                         $eq: ['$$course_participant.completion', 0]
+        //                     }
+        //                 }
+        //             },
+        //         }
+        //     },
+            // {
+            //     $lookup: {
+            //         from: "customers",
+            //         localField: "participant.participant_id",
+            //         foreignField: "_id",
+            //         as: "customers"
+            //     }
+            // },
+            // {
+            //     $lookup: {
+            //         from: "orders",
+            //         localField: "participant.order_id",
+            //         foreignField: "_id",
+            //         as: "orders"
+            //     }
+            // },
+            // {
+            //     $lookup: {
+            //         from: "orders",
+            //         let: { id: '$order_id' },
+            //         pipeline: [
+            //             {
+            //                 $match: {
+            //                     payment_status: 1,
+            //                     $expr: {
+            //                         $eq: ["$id", "$course_participant.order_id"]
+            //                     }
+            //                 }
+            //             },
+            //             { $project: { _id: 1, payment_status: 1} }
+            //         ],
+            //         as: "course_participant.order_info"
+            //     }
+            // }
+        // ])
+        // const courseData = await Course.aggregate([
+        //     { $match: { _id: mongoose.Types.ObjectId(`${req.params.courseId}`) } },
+        //     { $unwind: '$course_participant'},
+        //     { "$lookup": {
+        //         "from": "customers",
+        //         "localField": "course_participant.participant_id",
+        //         "foreignField": "_id",
+        //         "as": "course_participant.participant_id"
+        //     }},
+        //     { "$lookup": {
+        //         "from": "orders",
+        //         "localField": "course_participant.order_id",
+        //         "foreignField": "_id",
+        //         "as": "course_participant.order_id"
+        //     }},
+        //     { $match: { 'course_participant.completion': 1 } },
+        //     { $match: {"course_participant.order_id.payment_status" : 1}}
+        // ])
+        
+        // res.json(courseData);
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
         res.status(`${error.status ? error.status : 500}`).json({
@@ -160,24 +153,61 @@ exports.getAws = async (req, res) => {
 
 exports.getCertificate = async (req, res) => {
     try {
-        const participantId = req.params.participantId
-        const participantDb = db.collection('participant').doc(participantId)
-        const participant   = await (await participantDb.get()).data()
+        const { courseId, participantId } = req.params
+        const year = moment().tz("Asia/Jakarta").format("YYYY")
 
-        if (participant === undefined) throw { status: 404, code: 'ERR_DATA_NOT_FOUND', messages: 'Participant not found!' } 
+        const courseData = await Course.findOne(
+            { _id: mongoose.Types.ObjectId(courseId) },
+            { 
+                course_id: 1,
+                course_title: 1,
+                course_start: 1,
+                course_end: 1,
+                certificate_template: 1,
+                course_participant: {
+                    $elemMatch: {
+                        participant_id: mongoose.Types.ObjectId(participantId)
+                    },
+                }
+            }
+        )
+        .populate({ path: 'course_participant.participant_id', model: 'customers' })
+        .populate({ path: 'course_participant.order_id', model: 'orders' })
+        
+        if (courseData == null || courseData.course_participant.length == 0) throw {
+            status: '404',
+            code: 'ERR_NOT_FOUND',
+            messages: 'Course or participant not found'
+        }
+        
+        if (courseData.course_participant[0].completion == 0 || courseData.course_participant[0].order_id.payment_status == 0) {
+            throw {
+                status: '400',
+                code: 'ERR_NOT_COMPLETE',
+                messages: 'completion or payment not complete'
+            }   
+        } 
+        
+        const certificate = courseData.certificate_template
+        const participant = courseData.course_participant[0]
 
-        const users       = await (await participant.user.get()).data()
-        const courses     = await (await participant.course.get()).data()
-        if (courses.certificate == undefined || courses.certificate == null) throw { status: 400, code: 'ERR_DATA_CERT_TEMPLATE', messages: 'Required certificate template!' } 
+        const sDate     = moment.unix(courseData.course_start).locale('id').tz("Asia/Jakarta")
+        const eDate     = moment.unix(courseData.course_end).locale('id').tz("Asia/Jakarta")
 
-        if (participant.completion == 0) throw { status: 400, code: 'ERR_DATA_NOT_COMPLETE', messages: 'Participant not complete the course.' } 
+        let date
+        if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
+            date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
+        } else {
+            date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
+        }
     
         const data = {
-            fullName: users.fullName,
-            courseTitle: courses.title,
-            certificateNumber: participant.certificate.number,
-            participantId: `${participantId}`,
-            template: courses.certificate
+            courseId: courseData._id,
+            fullName: participant.participant_id.fullName,
+            courseTitle: courseData.course_title,
+            certificateNumber: `${courseData.course_id}/TB/${year}/${Math.floor(Math.random() * 9000)}`,
+            participantId: `${participant.id}`,
+            template: certificate
         }
     
         const stream = res.writeHead(200, {
@@ -189,187 +219,6 @@ exports.getCertificate = async (req, res) => {
             (chunk) => stream.write(chunk),
             () => stream.end()
         )
-    } catch (error) {
-        console.log(new Error(error.messages ? error.messages : error.message))
-        res.status(`${error.status ? error.status : 500}`).json({
-            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
-            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
-        })
-    }
-}
-
-exports.create = async (req, res) => {
-    try {
-        const year          = moment().tz("Asia/Jakarta").format("YYYY")
-        const participantId = req.params.participantId
-        const dbColletion   = db.collection('participant')
-        const participant   = await dbColletion.doc(participantId).get()
-        const courseData    = await (await (participant.data().course).get()).data()
-        const userData      = await (await (participant.data().user).get()).data()
-        const userId        = await (await (participant.data().user).get()).id
-
-        if (participant.data() === undefined || courseData === undefined || userData === undefined) {
-            throw { 
-                status: 404, 
-                code: 'ERR_NOT_FOUND', 
-                messages: 'Participant Not Found.'
-            }
-        }
-
-        const sDate     = moment.unix(courseData.startDate).locale('id').tz("Asia/Jakarta")
-        const eDate     = moment.unix(courseData.endDate).locale('id').tz("Asia/Jakarta")
-
-        let date
-        if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
-            date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
-        } else {
-            date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
-        }
-
-        const certificate   = {
-            number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 1000)}`,
-            signatureDate: moment().locale('id').unix(),
-            title: `${courseData.title}`,
-            userId: `${userId}`,
-            date
-        }
-
-        await dbColletion.doc(participantId).update({
-            completion: 1,
-            certificate
-        })
-
-        res.status(200).json({
-            code: 'OK',
-            message: `Success creating certificate for ${userData.fullName}.`,
-            data: {
-                userId: userId,
-                certificate
-            }
-        })
-
-    } catch (error) {
-        console.log(new Error(error.messages ? error.messages : error.message))
-        res.status(`${error.status ? error.status : 500}`).json({
-            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
-            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
-        })
-    }
-}
-
-exports.createAny = async (req, res) => {
-    try {
-        const participantData = req.body.participantData
-        const batch           = db.batch()
-        const year            = moment().tz("Asia/Jakarta").format("YYYY")
-
-        if (!Array.isArray(participantData)) throw { status: 400, code: 'ERR_BAD_REQUEST', messages: 'ParticipantData must be array!' }
-
-        let errorData = []
-        const bulkUpdate = await Promise.all(participantData.map(async participantId => {
-            const doc         = db.collection("participant").doc(`${participantId}`)
-            const participant = await doc.get()
-
-            if (participant.data() === undefined) return errorData.push(participantId)
-
-            const courseData  = await (await (participant.data().course).get()).data()
-            const courseId    = await (await (participant.data().course).get()).id
-            const userId      = await (await (participant.data().user).get()).id
-            const sDate       = moment.unix(courseData.startDate).locale('id').tz("Asia/Jakarta")
-            const eDate       = moment.unix(courseData.endDate).locale('id').tz("Asia/Jakarta")
-
-            let date
-            if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
-                date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
-            } else {
-                date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
-            }
-
-            const certificate   = {
-                number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000) + 1}`,
-                signatureDate: moment().locale('id').unix(),
-                title: `${courseData.title}`,
-                courseId: courseId,
-                userId: `${userId}`,
-                date
-            }
-            
-            return batch.update(doc, {
-                completion: 1,
-                certificate
-            })
-        }))
-
-        if ((bulkUpdate.length > 0) && (errorData.length === 0)) {
-            await batch.commit()
-
-            res.status(200).json({
-                code: 'OK',
-                message: `Success creating certificate!`,
-            })
-        } else {
-            throw {
-                status: 400,
-                code: 'ERR_GENERATE_CERTIFICATE',
-                messages: 'Some participantId is not found!'
-            }
-        }
-    } catch (error) {
-        console.log(new Error(error.messages ? error.messages : error.message))
-        res.status(`${error.status ? error.status : 500}`).json({
-            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
-            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
-        })
-    }
-}
-
-exports.createAll = async (req, res) => {
-    try {
-        const year     = moment().tz("Asia/Jakarta").format("YYYY")
-        const courseId = db.doc(`courses/${req.body.courseId}`)
-        const participant = await db.collection("participant").where('course', '==', courseId).where('paymentStats', '==', 2).get()
-
-        if (participant.size > 0) {
-            const bulkUpdate = await Promise.all(participant.docs.map(async doc => {
-                const courseData    = await (await (doc.data().course).get()).data()
-                const courseId      = await (await (doc.data().course).get()).id
-                const userId        = await (await (doc.data().user).get()).id
-
-                const sDate     = moment.unix(courseData.startDate).locale('id').tz("Asia/Jakarta")
-                const eDate     = moment.unix(courseData.endDate).locale('id').tz("Asia/Jakarta")
-        
-                let date
-                if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
-                    date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
-                } else {
-                    date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
-                }
-        
-                const certificate   = {
-                    number: `${courseData.courseCode}/TB/${year}/${Math.floor(Math.random() * 100000)}`,
-                    signatureDate: moment().locale('id').unix(),
-                    title: `${courseData.title}`,
-                    courseId: courseId,
-                    userId: `${userId}`,
-                    date
-                }
-
-                await doc.ref.update({
-                    completion: 1,
-                    certificate
-                })
-
-                return certificate
-            }))
-
-            if (bulkUpdate.length > 0) {
-                res.status(200).json({
-                    code: 'OK',
-                    message: `Success creating certificate for courseId ${req.body.courseId}.`,
-                })
-            }
-        }
-
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
         res.status(`${error.status ? error.status : 500}`).json({

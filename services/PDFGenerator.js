@@ -1,7 +1,7 @@
 const PDFDocument   = require('pdfkit')
 const QRCode        = require('qrcode')
 const axios         = require('axios')
-const doc = require('pdfkit')
+// const doc = require('pdfkit')
 
 const generate = async (data, dataCallback, endCallback) => {
     const doc = new PDFDocument({
@@ -20,6 +20,7 @@ const generate = async (data, dataCallback, endCallback) => {
         const name            = data.fullName
         const participantId   = data.participantId
         const certificateId   = data.certificateNumber
+        const courseId        = data.courseId
         const template        = data.template
         const frontImage      = (await axios.get(`${template.front}`, { responseType: 'arraybuffer' })).data
         const front           = `data:image/jpg;base64,${Buffer.from(frontImage).toString('base64')}`
@@ -40,7 +41,7 @@ const generate = async (data, dataCallback, endCallback) => {
         }
 
         // let signature   = await QRCode.toDataURL(`https://technobrainlab.com/certificate/signature/${signatureDate}`, qrOpts)
-        let code        = await QRCode.toDataURL(`https://technobrainlab.com/certificate/${participantId}`, qrOpts)
+        let code = await QRCode.toDataURL(`https://technobrainlab.com/course/certificate/print/${courseId}/${participantId}`, qrOpts)
 
         doc.image(`${front}`, 0, 0, { width: 842})
         doc.fillColor(`${template.fontColor}`)

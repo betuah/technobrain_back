@@ -17,6 +17,22 @@ exports.index = async (req, res) => {
    })
 }
 
+exports.getOrderByCourse = async (req, res) => {
+   Order.find({
+      items: {
+         $elemMatch: {
+            $in: [
+               mongoose.Types.ObjectId(`${req.params.course_id}`)
+            ]
+         }
+      }
+   }).populate({ path: 'customer', model: 'customers' }).then(resData => {
+      res.json(resData)
+   }).catch(e => {
+      res.status(500).send('Data tidak ditemukan')
+   })
+}
+
 exports.getOrderById = async (req, res) => {
    Order.findOne({ order_id: req.params.order_id })
       .populate({ path: 'items', model: 'courses' })
@@ -145,7 +161,7 @@ exports.create = async (req, res) => {
                }
             })
             
-            await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, } }})
+            await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, completion: 0 } }})
             
             if (payment_type != 'bank_transfer') {
                let content = mail_template(order_id, `${first_name} ${last_name}`, `${item_details[0].name}`, item_details[0].price, unik, orderData.gross_amount, moment().locale('id').format('LL'))
@@ -166,6 +182,33 @@ exports.create = async (req, res) => {
    } catch (error) {
       console.log(error)
       res.status(500).send('Internal Server Error')
+   }
+}
+
+exports.paid = async (req, res) => {
+   try {
+      const {order_id} = req.body
+      await Order.updateOne({ _id: mongoose.Types.ObjectId(`${order_id}`) }, { $set: { payment_status: 1 }} )
+      res.status(200).send('success')
+   } catch (error) {
+      res.status(500).send('Gagal Update data!')
+   }
+}
+
+exports.paids = async (req, res) => {
+   try {
+      const { courses } = req.body
+
+      courseCondition = courses.map(ids => {
+         return {
+            _id: mongoose.Types.ObjectId(`${ids}`)
+         }
+      })
+
+      await Order.updateMany({ _id: mongoose.Types.ObjectId(`${req.params.order_id}`) }, { $set: { payment_status: 1 }})
+      res.status(200).send('success')
+   } catch (error) {
+      res.status(500).send('Gagal Update data!')
    }
 }
 

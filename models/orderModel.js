@@ -34,7 +34,7 @@ const paymentSchema = new Schema({
    },
    payment_status: {
       type: Number,
-      trim: true
+      default: 0,
    }
 }, { 
    timestamps: true, 

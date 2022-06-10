@@ -1,5 +1,6 @@
 const User = require('../models/usersModel')
 const Course = require('../models/courseModel')
+const mongoose = require('mongoose')
 
 exports.index = async (req, res) => {
     try {
@@ -19,7 +20,7 @@ exports.index = async (req, res) => {
 
 exports.create = async (req, res) => {
     try {
-        const { course_title, course_desc, course_category, course_price, course_participant } = req.body
+        const { course_title, course_desc, course_category, course_price, course_participant, course_start, course_end, certificate_template } = req.body
 
         const courseData = {
             course_id: Math.floor(Math.random() * 9000000000) + 1000000000,
@@ -27,7 +28,10 @@ exports.create = async (req, res) => {
             course_desc,
             course_category,
             course_price,
-            course_participant
+            course_participant,
+            course_start,
+            course_end,
+            certificate_template
         }
 
         Course.create(courseData).then(data => {
@@ -56,14 +60,11 @@ exports.getCourseById = async (req, res) => {
             res.send('Course Data Not Found!')
         } else {
             const result = {
-                id: courseRes._id,
-                course_id: courseRes.course_id,
-                course_title: courseRes.course_title,
-                course_desc: courseRes.course_desc,
-                course_category: courseRes.course_category,
-                course_price: courseRes.course_price,
+                ...courseRes,
                 course_participant: courseRes.course_participant.map(data => {
                         return {
+                            id: data._id,
+                            completion: data.completion,
                             participant: {
                                 id: data.participant_id._id,
                                 fullName: data.participant_id.fullName,
@@ -73,7 +74,7 @@ exports.getCourseById = async (req, res) => {
                                 id: data.order_id._id,
                                 order_id: data.order_id.order_id,
                                 payment_status: data.order_id.payment_status
-                            }
+                            },
                         }
                     })
             }
@@ -82,5 +83,30 @@ exports.getCourseById = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.send('Internal Server Error')
+    }
+}
+
+exports.completion = async (req, res) => {
+    try {
+        const { course_id, participant_id } = req.body
+
+        const participantList = participant_id.map(ids => mongoose.Types.ObjectId(`${ids}`))
+
+        await Course.findOneAndUpdate(
+            { _id: mongoose.Types.ObjectId(`${course_id}`) },
+            { $set: { "course_participant.$[elem].completion": 1 } },
+            {
+                "arrayFilters": [{
+                    "elem._id": {
+                        $in: participantList
+                    }
+                }]
+            }
+        )
+        
+        res.status(200).send('Update success.')
+    } catch (error) {
+        console.log(error)
+        res.status(500).send('Internal Server Error')
     }
 }

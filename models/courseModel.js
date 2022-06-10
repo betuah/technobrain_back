@@ -1,3 +1,4 @@
+const { ISO_8601 } = require('moment')
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
@@ -9,7 +10,71 @@ const participantSchema = new Schema({
    order_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'orders'
+   },
+   completion: {
+      type: Number,
+      default: 0,
    }
+})
+
+const certificateSchema = new Schema({
+   back: {
+      type: String,
+      trim: true
+   },
+   fontColor: {
+      type: String,
+      trim: true
+   },
+   front: {
+      type: String,
+      trim: true
+   },
+   certificateNumber: {
+      align: {
+         type: String,
+         trim: true
+      },
+      fontSize: {
+         type: Number
+      },
+      x: {
+         type: Number
+      },
+      y: {
+         type: Number
+      },
+   },
+   name: {
+      align: {
+         type: String,
+         trim: true
+      },
+      fontSize: {
+         type: Number
+      },
+      x: {
+         type: Number
+      },
+      y: {
+         type: Number
+      },
+   },
+   qrcode: {
+      align: {
+         type: String,
+         trim: true
+      },
+      size: {
+         type: Number
+      },
+      x: {
+         type: Number
+      },
+      y: {
+         type: Number
+      },
+   },
 })
 
 const courseSchema = new Schema({
@@ -27,6 +92,13 @@ const courseSchema = new Schema({
       type: String,
       trim: true
    },
+   course_start: {
+      type: Date,
+      trim: true,
+   },
+   course_end: {
+      type: Date,
+   },
    course_category: {
       type: String,
       trim: true,
@@ -36,7 +108,8 @@ const courseSchema = new Schema({
       trim: true,
       required: true
    },
-   course_participant: [participantSchema]
+   course_participant: [participantSchema],
+   certificate_template: certificateSchema
 }, { 
    timestamps: true, 
    collection : 'courses' 
@@ -52,6 +125,15 @@ courseSchema.set('toJSON', {
 });
 
 participantSchema.set('toJSON', {
+   virtuals: true,
+   versionKey: false,
+   transform: function(doc, ret) {
+      ret.id = ret._id;
+      delete ret._id;
+   }
+});
+
+certificateSchema.set('toJSON', {
    virtuals: true,
    versionKey: false,
    transform: function(doc, ret) {

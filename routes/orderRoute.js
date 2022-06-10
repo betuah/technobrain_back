@@ -7,9 +7,18 @@ module.exports = (app) => {
 
    app.route('/api/v1/order/:order_id')
       .get(order.getOrderById)
+   
+   app.route('/api/v1/order/course/:course_id')
+      .get(order.getOrderByCourse)
 
    app.route('/api/v1/order/create')
       .post(order.create)
+   
+   app.route('/api/v1/order/paid')
+      .post(order.paid)
+   
+   app.route('/api/v1/order/paids')
+      .post(order.paids)
    
    app.route('/api/v1/order/notify')
       .post(order.notif)
