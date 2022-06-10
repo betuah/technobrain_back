@@ -42,6 +42,10 @@ app.use(morgan('combined', {
 /* End Logging */
 
 /* Dynamic CORS */
+app.use(cors({
+    origin: '*'
+}));
+
 // const whitelist = [`${env.client_host}`,`${env.client_host_prod}`]
 
 // const options = {
