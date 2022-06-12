@@ -56,16 +56,13 @@ exports.getCourseById = async (req, res) => {
             .populate({ path: 'course_participant.participant_id', model: 'customers' })
             .populate({ path: 'course_participant.order_id', model: 'orders' })
         
-        // console.log(courseRes);
-        
         if (courseRes == null) {
-            // res.send('Course Data Not Found!')
             throw 'Course Data Not Found!'
         } else {
             const result = {
-                ...courseRes,
+                ...courseRes._doc,
                 course_participant: courseRes.course_participant.map(data => {
-                    if (data.participant.participant_id._id !== null) {
+                    if (data.participant_id != null) {
                         return {
                             id: data._id,
                             completion: data.completion,
@@ -82,7 +79,7 @@ exports.getCourseById = async (req, res) => {
                             },
                         }        
                     }
-                })
+                }).filter(item => item != null)
             }
             res.status(200).json(result)
         }
