@@ -52,7 +52,7 @@ exports.create = async (req, res) => {
 
 exports.getCourseById = async (req, res) => {
     try {
-        const courseRes = await Course.findOne({ course_id: req.params.course_id }).lean()
+        const courseRes = await Course.findOne({ course_id: req.params.course_id })
             .populate({ path: 'course_participant.participant_id', model: 'customers' })
             .populate({ path: 'course_participant.order_id', model: 'orders' })
         
