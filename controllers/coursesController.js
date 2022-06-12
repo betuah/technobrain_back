@@ -56,7 +56,7 @@ exports.getCourseById = async (req, res) => {
             .populate({ path: 'course_participant.participant_id', model: 'customers' })
             .populate({ path: 'course_participant.order_id', model: 'orders' })
         
-        console.log(courseRes);
+        // console.log(courseRes);
         
         if (courseRes == null) {
             // res.send('Course Data Not Found!')
@@ -65,6 +65,7 @@ exports.getCourseById = async (req, res) => {
             const result = {
                 ...courseRes,
                 course_participant: courseRes.course_participant.map(data => {
+                    if (data.participant_id._id !== null) {
                         return {
                             id: data._id,
                             completion: data.completion,
@@ -79,8 +80,9 @@ exports.getCourseById = async (req, res) => {
                                 payment_status: data.order_id.payment_status,
                                 gross_amount: data.order_id.gross_amount
                             },
-                        }
-                    })
+                        }        
+                    }
+                })
             }
             res.status(200).json(result)
         }
