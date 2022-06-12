@@ -69,7 +69,8 @@ exports.getCourseById = async (req, res) => {
                             participant: {
                                 id: data.participant_id._id,
                                 fullName: data.participant_id.fullName,
-                                email: data.participant_id.email
+                                email: data.participant_id.email,
+                                phone_number: data.participant_id.phone_number
                             },
                             order: {
                                 id: data.order_id._id,

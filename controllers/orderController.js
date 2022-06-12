@@ -8,6 +8,7 @@ const env = require('../env')
 const sendMail = require('../services/mail')
 const moment = require('moment')
 const mail_template = require('../config/mail_template')
+const mail_berhasil = require('../config/mail_berhasil')
 
 exports.index = async (req, res) => {
    Order.find({}).populate({ path: 'items', model: 'courses'}).then(resData => {
@@ -52,6 +53,7 @@ exports.getOrderById = async (req, res) => {
                id: resData.customer._id,
                fullName: resData.customer.fullName,
                email: resData.customer.email,
+               phone_number: resData.customer.phone_number
             },
             items: resData.items.map(data => {
                return {
@@ -190,10 +192,23 @@ exports.create = async (req, res) => {
 
 exports.paid = async (req, res) => {
    try {
-      const {order_id} = req.body
-      await Order.updateOne({ _id: mongoose.Types.ObjectId(`${order_id}`) }, { $set: { payment_status: 1 }} )
+      const { order_id } = req.body
+      const orderData = await Order.findOne({ _id: mongoose.Types.ObjectId(order_id) })
+      .populate({ path: 'items', model: 'courses' })
+         .populate({ path: 'customer', model: 'customers' })
+      
+      if (orderData == null || orderData.length == 0) {
+         throw 'data order tidak di temukan'
+      }
+      
+      await Order.updateOne({ _id: mongoose.Types.ObjectId(`${order_id}`) }, { $set: { payment_status: 1 } })
+
+      let content = mail_berhasil(`${orderData.order_id}`,`${orderData.customer._id}`, `${orderData.items[0].course_title}`, `${orderData.gross_amount}`, moment().locale('id').format('LL'))
+      
+      await sendMail(orderData.customer.email, `Pembayaran Berhasil - Technobrain Systema}`, content)
       res.status(200).send('success')
    } catch (error) {
+      console.log(error)
       res.status(500).send('Gagal Update data!')
    }
 }
@@ -252,9 +267,9 @@ exports.notif = async (req, res) => {
 
 exports.testMail = async (req, res) => {
    try {
-      let content = mail_template('123123123','Betuah Anugerah', 'AWS - Technical Fundamental', '50.000', Math.floor(Math.random() * 1000 + 1), '50.000', moment().locale('id').format('LL'))
+      let content = mail_berhasil('123123123','Betuah Anugerah', 'AWS - Technical Fundamental', '50.000', moment().locale('id').format('LL'))
 
-      await sendMail('betuah@seamolec.org', 'Menunggu Pembayaran Pelatihan - AWS Technical Fundamental', content)
+      await sendMail('betuah@seamolec.org', 'Pembayaran Berhasil - Technobrain Sistema', content)
       res.send('mail sent!')
    } catch (error) {
       console.log(error)
