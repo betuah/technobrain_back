@@ -65,7 +65,7 @@ exports.getCourseById = async (req, res) => {
             const result = {
                 ...courseRes,
                 course_participant: courseRes.course_participant.map(data => {
-                    if (data.participant_id._id !== null) {
+                    if (data.participant.participant_id._id !== null) {
                         return {
                             id: data._id,
                             completion: data.completion,
