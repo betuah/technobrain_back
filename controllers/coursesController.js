@@ -56,6 +56,8 @@ exports.getCourseById = async (req, res) => {
             .populate({ path: 'course_participant.participant_id', model: 'customers' })
             .populate({ path: 'course_participant.order_id', model: 'orders' })
         
+        console.log(courseRes);
+        
         if (courseRes == null) {
             // res.send('Course Data Not Found!')
             throw 'Course Data Not Found!'
