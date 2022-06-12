@@ -57,7 +57,8 @@ exports.getCourseById = async (req, res) => {
             .populate({ path: 'course_participant.order_id', model: 'orders' })
         
         if (courseRes == null) {
-            res.send('Course Data Not Found!')
+            // res.send('Course Data Not Found!')
+            throw 'Course Data Not Found!'
         } else {
             const result = {
                 ...courseRes,
@@ -83,7 +84,7 @@ exports.getCourseById = async (req, res) => {
         }
     } catch (error) {
         console.log(error)
-        res.send('Internal Server Error')
+        res.status(500).send(error)
     }
 }
 
