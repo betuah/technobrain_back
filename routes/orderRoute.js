@@ -4,6 +4,9 @@ module.exports = (app) => {
 
    app.route('/api/v1/test/email')
       .post(order.testMail)
+   
+   app.route('/api/v1/order')
+      .get(order.index)
 
    app.route('/api/v1/order/:order_id')
       .get(order.getOrderById)

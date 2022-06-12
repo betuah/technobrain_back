@@ -18,19 +18,22 @@ exports.index = async (req, res) => {
 }
 
 exports.getOrderByCourse = async (req, res) => {
-   Order.find({
-      items: {
-         $elemMatch: {
-            $in: [
-               mongoose.Types.ObjectId(`${req.params.course_id}`)
-            ]
+   try {
+      const resData = await Order.find({
+         items: {
+            $elemMatch: {
+               $in: [
+                  mongoose.Types.ObjectId(`${ req.params.course_id}`)
+               ]
+            }
          }
-      }
-   }).populate({ path: 'customer', model: 'customers' }).then(resData => {
+      }).populate({ path: 'customer', model: 'customers' })
+      
       res.json(resData)
-   }).catch(e => {
-      res.status(500).send('Data tidak ditemukan')
-   })
+   } catch (error) {
+      console.log(error);
+      res.status(500).send('Internal Server Error')
+   }
 }
 
 exports.getOrderById = async (req, res) => {

@@ -73,7 +73,8 @@ exports.getCourseById = async (req, res) => {
                             order: {
                                 id: data.order_id._id,
                                 order_id: data.order_id.order_id,
-                                payment_status: data.order_id.payment_status
+                                payment_status: data.order_id.payment_status,
+                                gross_amount: data.order_id.gross_amount
                             },
                         }
                     })
