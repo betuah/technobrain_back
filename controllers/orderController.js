@@ -203,7 +203,7 @@ exports.paid = async (req, res) => {
       
       await Order.updateOne({ _id: mongoose.Types.ObjectId(`${order_id}`) }, { $set: { payment_status: 1 } })
 
-      let content = mail_berhasil(`${orderData.order_id}`,`${orderData.customer._id}`, `${orderData.items[0].course_title}`, `${orderData.gross_amount}`, moment().locale('id').format('LL'))
+      let content = mail_berhasil(`${orderData.order_id}`,`${orderData.customer.fullName}`, `${orderData.items[0].course_title}`, `${orderData.gross_amount}`, moment().locale('id').format('LL'))
       
       await sendMail(orderData.customer.email, `Pembayaran Berhasil - Technobrain Systema}`, content)
       res.status(200).send('success')
