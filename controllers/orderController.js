@@ -205,7 +205,7 @@ exports.paid = async (req, res) => {
 
       let content = mail_berhasil(`${orderData.order_id}`,`${orderData.customer.fullName}`, `${orderData.items[0].course_title}`, `${orderData.gross_amount}`, moment().locale('id').format('LL'))
       
-      await sendMail(orderData.customer.email, `Pembayaran Berhasil - Technobrain Systema}`, content)
+      await sendMail(orderData.customer.email, `Pembayaran Berhasil - Technobrain Systema`, content)
       res.status(200).send('success')
    } catch (error) {
       console.log(error)
