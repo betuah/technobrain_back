@@ -14,4 +14,9 @@ module.exports = (app) => {
     app.route('/api/v1/course/completion')
         .post(course.completion)
     
+    app.route('/api/v1/course/uncompletion')
+        .post(course.uncompletion)
+    
+    app.route('/api/v1/course/:course_id')
+        .delete(course.delete)
 }

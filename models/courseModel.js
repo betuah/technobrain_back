@@ -14,6 +14,9 @@ const participantSchema = new Schema({
    completion: {
       type: Number,
       default: 0,
+   },
+   certificate: {
+      type: String,
    }
 })
 

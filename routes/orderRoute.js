@@ -26,6 +26,9 @@ module.exports = (app) => {
    app.route('/api/v1/order/notify')
       .post(order.notif)
    
+   app.route('/api/v1/order/resend')
+      .post(order.resendPayment)
+   
    // app.route('/api/v1/order/finish')
    //    .post(order.finish)
    

@@ -1,5 +1,5 @@
 
-const firebaseAdmin   = require("firebase-admin")
+const firebaseAdmin = require("firebase-admin")
 require('dotenv').config()
 
 firebaseAdmin.initializeApp({

@@ -1,4 +1,4 @@
-const User = require('../models/usersModel')
+const Certificate = require('../models/certificateModel')
 const Course = require('../models/courseModel')
 const mongoose = require('mongoose')
 
@@ -20,10 +20,10 @@ exports.index = async (req, res) => {
 
 exports.create = async (req, res) => {
     try {
-        const { course_title, course_desc, course_category, course_price, course_participant, course_start, course_end, certificate_template } = req.body
+        const { course_id, course_title, course_desc, course_category, course_price, course_participant, course_start, course_end, certificate_template } = req.body
 
         const courseData = {
-            course_id: Math.floor(Math.random() * 9000000000) + 1000000000,
+            course_id,
             course_title,
             course_desc,
             course_category,
@@ -52,7 +52,7 @@ exports.create = async (req, res) => {
 
 exports.getCourseById = async (req, res) => {
     try {
-        const courseRes = await Course.findOne({ course_id: req.params.course_id })
+        const courseRes = await Course.findOne({ _id: mongoose.Types.ObjectId(req.params.course_id) })
             .populate({ path: 'course_participant.participant_id', model: 'customers' })
             .populate({ path: 'course_participant.order_id', model: 'orders' })
         
@@ -65,7 +65,7 @@ exports.getCourseById = async (req, res) => {
                     if (data.participant_id != null) {
                         return {
                             id: data._id,
-                            completion: data.completion,
+                            completion: data.completion ? data.completion : 0,
                             participant: {
                                 id: data.participant_id._id,
                                 fullName: data.participant_id.fullName,
@@ -95,24 +95,128 @@ exports.getCourseById = async (req, res) => {
 exports.completion = async (req, res) => {
     try {
         const { course_id, participant_id } = req.body
-
         const participantList = participant_id.map(ids => mongoose.Types.ObjectId(`${ids}`))
+        const session = await mongoose.startSession()
 
-        await Course.findOneAndUpdate(
-            { _id: mongoose.Types.ObjectId(`${course_id}`) },
-            { $set: { "course_participant.$[elem].completion": 1 } },
-            {
-                "arrayFilters": [{
-                    "elem._id": {
-                        $in: participantList
-                    }
-                }]
+        try {
+            session.startTransaction()
+
+            const courseData = await Course.findOne({ _id: mongoose.Types.ObjectId(course_id) }).populate({ path: 'course_participant.order_id', model: 'orders' })
+
+            if (courseData == null) {
+                res.status(404).send('Course not found!')
+                return;
             }
-        )
-        
-        res.status(200).send('Update success.')
+
+            await Promise.all(
+                participantList.map(async i => {
+                    const findOrder = courseData.course_participant.find(r => r._id.equals(i))
+                    if (findOrder !== null) {
+                        if (findOrder.order_id.payment_status == 1) {
+                            if (findOrder.certificate == null || findOrder.certificate == '') {
+                                const cert = {
+                                    certificateId : courseData.course_id + Math.floor(Math.random() * 999) + 1,
+                                    course: mongoose.Types.ObjectId(courseData._id),
+                                    customer: mongoose.Types.ObjectId(findOrder.participant_id),
+                                    participant: i.toString()
+                                }
+    
+                                const certifData = await Certificate.create(cert)
+                                await Course.findOneAndUpdate(
+                                    { _id: mongoose.Types.ObjectId(course_id) },
+                                    {
+                                        $set: {
+                                            "course_participant.$[elem].completion": 1,
+                                            "course_participant.$[elem].certificate": certifData._id
+                                        }
+                                    },
+                                    {
+                                        "arrayFilters": [{
+                                            "elem._id": {
+                                                $in: [i]
+                                            }
+                                        }]
+                                    }
+                                )
+                            }
+                        }
+                    }
+                })
+            )
+
+            await session.commitTransaction()
+            session.endSession()
+            
+            res.status(200).send('Update success.')
+        } catch (error) {
+            console.log(error)
+            res.status(400).send('Update failed!')
+            await session.abortTransaction()
+        }
     } catch (error) {
         console.log(error)
         res.status(500).send('Internal Server Error')
+    }
+}
+
+exports.uncompletion = async (req, res) => {
+    try {
+        const { course_id, participant_id } = req.body
+        const participantList = participant_id.map(ids => mongoose.Types.ObjectId(`${ids}`))
+        const session = await mongoose.startSession()
+
+        try {
+            session.startTransaction()
+            await Certificate.deleteMany({
+                participant: {
+                    $in: participant_id
+                }
+            })
+            
+            await Course.findOneAndUpdate(
+                { _id: mongoose.Types.ObjectId(`${course_id}`) },
+                {
+                    $set: {
+                        "course_participant.$[elem].completion": 0,
+                        "course_participant.$[elem].certificate": null
+                    }
+                },
+                {
+                    "arrayFilters": [{
+                        "elem._id": {
+                            $in: participantList
+                        }
+                    }]
+                }
+            )
+            
+            await session.commitTransaction()
+            session.endSession()
+            res.status(200).send('Update success.')
+        } catch (error) {
+            console.log(error)
+            res.status(400).send('Update failed!')
+            await session.abortTransaction()
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).send('Internal Server Error')
+    }
+}
+
+exports.delete = async (req, res) => {
+    try {
+        const { course_id } = req.params
+
+        if (typeof course_id == "string" && course_id.length == 24) {
+            await Course.deleteOne({ _id: mongoose.Types.ObjectId(course_id) });
+            res.status(200).send(`Course with id ${course_id} has been deleted.`)
+            return
+        } 
+
+        res.status(400).send('Course must be string and has 24 character.')
+    } catch (error) {
+        console.log(error)
+        res.status(500).send('Failed delete course')
     }
 }

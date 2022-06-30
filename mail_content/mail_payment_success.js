@@ -1,4 +1,4 @@
-const mail_template = (order_id ,name, course_title, price, created) => {
+const mailPaymentSuccess = (order_id ,name, course_title, price, created) => {
    return content = `      
    <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office" style="font-family:arial, 'helvetica neue', helvetica, sans-serif">
    <head>
@@ -266,4 +266,4 @@ const mail_template = (order_id ,name, course_title, price, created) => {
    </html>`
 }
 
-module.exports = mail_template
+module.exports = mailPaymentSuccess

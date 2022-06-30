@@ -7,8 +7,8 @@ const Course = require('../models/courseModel')
 const env = require('../env')
 const sendMail = require('../services/mail')
 const moment = require('moment')
-const mail_template = require('../config/mail_template')
-const mail_berhasil = require('../config/mail_berhasil')
+const mail_template = require('../mail_content/mail_payment_waiting')
+const mail_berhasil = require('../mail_content/mail_payment_success')
 
 exports.index = async (req, res) => {
    Order.find({}).populate({ path: 'items', model: 'courses'}).then(resData => {
@@ -121,8 +121,6 @@ exports.create = async (req, res) => {
             }
          }
 
-         // console.log(midtransReq, items, courseData.length)
-
          try {
             let mitrans_res = null
             if (payment_type == 'bank_transfer') {
@@ -166,7 +164,7 @@ exports.create = async (req, res) => {
                }
             })
             
-            await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, completion: 0 } }})
+            await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, completion: 0, certificate: null } }})
             
             if (payment_type != 'bank_transfer') {
                let content = mail_template(order_id, `${first_name} ${last_name}`, `${item_details[0].name}`, item_details[0].price, unik, orderData.gross_amount, moment().locale('id').format('LL'))
@@ -192,7 +190,8 @@ exports.create = async (req, res) => {
 
 exports.paid = async (req, res) => {
    try {
-      const { order_id } = req.body
+      const { order_id, paid } = req.body
+      const paidResult = paid == 1 ? 0 : 1
       const orderData = await Order.findOne({ _id: mongoose.Types.ObjectId(order_id) })
       .populate({ path: 'items', model: 'courses' })
          .populate({ path: 'customer', model: 'customers' })
@@ -201,11 +200,10 @@ exports.paid = async (req, res) => {
          throw 'data order tidak di temukan'
       }
       
-      await Order.updateOne({ _id: mongoose.Types.ObjectId(`${order_id}`) }, { $set: { payment_status: 1 } })
+      await Order.updateOne({ _id: mongoose.Types.ObjectId(`${order_id}`) }, { $set: { payment_status: paidResult} })
 
       let content = mail_berhasil(`${orderData.order_id}`,`${orderData.customer.fullName}`, `${orderData.items[0].course_title}`, `${orderData.gross_amount}`, moment().locale('id').format('LL'))
-      
-      await sendMail(orderData.customer.email, `Pembayaran Berhasil - Technobrain Systema`, content)
+      if (paidResult == 1) await sendMail(orderData.customer.email, `Pembayaran Berhasil - Technobrain Systema`, content)
       res.status(200).send('success')
    } catch (error) {
       console.log(error)
@@ -227,6 +225,46 @@ exports.paids = async (req, res) => {
       res.status(200).send('success')
    } catch (error) {
       res.status(500).send('Gagal Update data!')
+   }
+}
+
+exports.resendPayment = async (req, res) => {
+   try {
+      const { order_id } = req.body
+      
+      if (Array.isArray(order_id)) {
+         const orderData = await Order.find({
+            '_id': {
+               $in: order_id.map(i => mongoose.Types.ObjectId(`${i}`))
+            }
+         })
+         .populate({ path: 'items', model: 'courses' })
+         .populate({ path: 'customer', model: 'customers' })
+         
+         if (orderData.length > 0) {
+            const promises = orderData.map(async i => {
+               if (i.payment_status == 1) {
+                  let content = mail_berhasil(`${i.order_id}`, `${i.customer.fullName}`, `${i.items[0].course_title}`, `${i.gross_amount}`, moment().locale('id').format('LL'))
+                  await sendMail(i.customer.email, `Pembayaran Berhasil - Technobrain Systema`, content)
+               } else {
+               const unik = i.gross_amount - i.items[0].course_price
+                  let content = mail_template(i.order_id, `${i.customer.fullName}`, `${i.items[0].course_title}`, i.items[0].course_price, unik, i.gross_amount, moment().locale('id').format('LL'))
+                  await sendMail(i.customer.email, `Menunggu Pembayaran - Technobrain Systema}`, content)
+               }
+            });
+            
+            await Promise.all(promises);
+            
+            res.status(200).send('Mail Sended!')
+         } else {
+            res.status(404).send('Order Not Found!')
+         }
+      } else {
+         res.status(400).send('order_id must be array')
+      }
+   } catch (error) {
+      new Error(console.log(error))
+      res.status(500).send('Internal Server Error!')
    }
 }
 

@@ -1,47 +1,17 @@
 const pdf           = require('../services/PDFGenerator')
-const firebaseAdmin = require('../config/firebaseAdminConfig')
 const moment        = require('moment-timezone')
-const db = firebaseAdmin.firestore()
 
 const mongoose = require('mongoose')
-const User = require('../models/usersModel')
-const Order = require('../models/orderModel')
+const Certificate = require('../models/certificateModel')
 const Course = require('../models/courseModel')
 
 exports.index = async (req, res) => {
     try {
-        const participant     = await db.collection('participant').where('completion', '==', 1).get()
-        const participantData = await Promise.all(participant.docs.map(async doc => {
-            const user        = await (await doc.data().user.get()).data()
-            const userId      = await (await doc.data().user.get()).id
-            const course      = await (await doc.data().course.get()).data()
-            const courseId    = await (await doc.data().course.get()).id
-            const data        = {
-                id: doc.id,
-                certificate: doc.data().certificate,
-                completion: doc.data().completion,
-                user: {
-                    userId,
-                    fullName : course === undefined ? '' : user.fullName,
-                    email : course === undefined ? '' : user.email
-                },
-                course: {
-                    courseId,
-                    title : course === undefined ? '' : course.title,
-                    courseType: course === undefined ? '' : course.courseType
-                }
-            }
-
-            return data
-        }))
-
-        if (participantData.length < 1) throw { status: 404, code: 'ERR_NOT_FOUND', messages: 'No user data list.' }
-
-        res.status(200).json({
-            code: 'OK',
-            message: 'Recieved all data success.',
-            data: participantData
-        })
+        const certData = await Certificate.find({})
+            .populate({ path: 'customer', model: 'customers' })
+            .populate({ path: 'course', model: 'courses' })
+        console.log(certData)
+        res.status(200).json(certData)
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
         res.status(`${error.status ? error.status : 500}`).json({
@@ -56,6 +26,7 @@ exports.getDataCertificateByCourse = async (req, res) => {
         const courseData = await Course.findOne({ _id: mongoose.Types.ObjectId(`${req.params.courseId}`) })
             .populate({ path: 'course_participant.participant_id', model: 'customers' })
             .populate({ path: 'course_participant.order_id', model: 'orders' })
+            .populate({ path: 'course_participant.certificate', model: 'certificates' })
         
         if (courseData == null || courseData.course_participant.length == 0) throw {
             code: 404,
@@ -68,80 +39,7 @@ exports.getDataCertificateByCourse = async (req, res) => {
         res.json({
             ...courseData._doc,
             course_participant
-        });
-        // const data = 
-        // const courseData = await Course.aggregate([
-        //     { $match: { _id: mongoose.Types.ObjectId(`${req.params.courseId}`) } },
-        //     {
-        //         $project: {
-        //             course_id: 1,
-        //             course_title: 1,
-        //             participant: {
-        //                 $filter: {
-        //                     input: "$course_participant",
-        //                     as: "course_participant",
-        //                     cond: {
-        //                         $eq: ['$$course_participant.completion', 0]
-        //                     }
-        //                 }
-        //             },
-        //         }
-        //     },
-            // {
-            //     $lookup: {
-            //         from: "customers",
-            //         localField: "participant.participant_id",
-            //         foreignField: "_id",
-            //         as: "customers"
-            //     }
-            // },
-            // {
-            //     $lookup: {
-            //         from: "orders",
-            //         localField: "participant.order_id",
-            //         foreignField: "_id",
-            //         as: "orders"
-            //     }
-            // },
-            // {
-            //     $lookup: {
-            //         from: "orders",
-            //         let: { id: '$order_id' },
-            //         pipeline: [
-            //             {
-            //                 $match: {
-            //                     payment_status: 1,
-            //                     $expr: {
-            //                         $eq: ["$id", "$course_participant.order_id"]
-            //                     }
-            //                 }
-            //             },
-            //             { $project: { _id: 1, payment_status: 1} }
-            //         ],
-            //         as: "course_participant.order_info"
-            //     }
-            // }
-        // ])
-        // const courseData = await Course.aggregate([
-        //     { $match: { _id: mongoose.Types.ObjectId(`${req.params.courseId}`) } },
-        //     { $unwind: '$course_participant'},
-        //     { "$lookup": {
-        //         "from": "customers",
-        //         "localField": "course_participant.participant_id",
-        //         "foreignField": "_id",
-        //         "as": "course_participant.participant_id"
-        //     }},
-        //     { "$lookup": {
-        //         "from": "orders",
-        //         "localField": "course_participant.order_id",
-        //         "foreignField": "_id",
-        //         "as": "course_participant.order_id"
-        //     }},
-        //     { $match: { 'course_participant.completion': 1 } },
-        //     { $match: {"course_participant.order_id.payment_status" : 1}}
-        // ])
-        
-        // res.json(courseData);
+        })
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
         res.status(`${error.status ? error.status : 500}`).json({
@@ -166,7 +64,7 @@ exports.getCertificate = async (req, res) => {
                 certificate_template: 1,
                 course_participant: {
                     $elemMatch: {
-                        participant_id: mongoose.Types.ObjectId(participantId)
+                        _id: mongoose.Types.ObjectId(participantId)
                     },
                 }
             }
@@ -219,6 +117,22 @@ exports.getCertificate = async (req, res) => {
             (chunk) => stream.write(chunk),
             () => stream.end()
         )
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
+exports.checkCertificate = async (req, res) => {
+    try {
+        const certificateData = await Certificate.findOne({ _id: mongoose.Types.ObjectId(`${req.params.certificateId}`) })
+            .populate({ path: 'customer', model: 'customers' })
+            .populate({ path: 'course', model: 'courses' })
+        
+        res.status(200).json(certificateData)
     } catch (error) {
         console.log(new Error(error.messages ? error.messages : error.message))
         res.status(`${error.status ? error.status : 500}`).json({
