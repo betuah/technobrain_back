@@ -5,7 +5,7 @@ module.exports = (app) => {
     app.route('/api/v1/certificate')
         .get(Certificate.index)
     
-    app.route('/api/v1/cetificate/check/:certificateId')
+    app.route('/api/v1/certificate/check/:certificateId')
         .get(Certificate.checkCertificate)
 
     app.route('/api/v1/certificate/print/:courseId/:participantId')
