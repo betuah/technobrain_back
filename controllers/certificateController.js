@@ -1,5 +1,6 @@
-const pdf           = require('../services/PDFGenerator')
-const moment        = require('moment-timezone')
+const pdfTemplate = require('../services/PDFTemplate')
+const pdf    = require('../services/PDFGenerator')
+const moment = require('moment-timezone')
 
 const mongoose = require('mongoose')
 const Certificate = require('../models/certificateModel')
@@ -52,7 +53,6 @@ exports.getDataCertificateByCourse = async (req, res) => {
 exports.getCertificate = async (req, res) => {
     try {
         const { courseId, participantId } = req.params
-        const year = moment().tz("Asia/Jakarta").format("YYYY")
 
         const courseData = await Course.findOne(
             { _id: mongoose.Types.ObjectId(courseId) },
@@ -88,23 +88,20 @@ exports.getCertificate = async (req, res) => {
         
         const certificate = courseData.certificate_template
         const participant = courseData.course_participant[0]
-
-        const sDate     = moment.unix(courseData.course_start).locale('id').tz("Asia/Jakarta")
-        const eDate     = moment.unix(courseData.course_end).locale('id').tz("Asia/Jakarta")
-
-        let date
-        if (sDate.year() !== eDate.year() || sDate.month() !== eDate.month()) {
-            date = `${moment(sDate.toISOString()).format('DD MM YYYY')} - ${moment(eDate.toISOString()).format('DD MM YYYY')}`
-        } else {
-            date = `${moment(sDate.toISOString()).format('D')} - ${moment(eDate.toISOString()).format('DD MMMM YYYY')}`
-        }
     
+        // const data = {
+        //     courseId: courseData._id,
+        //     fullName: participant.participant_id.fullName,
+        //     courseTitle: courseData.course_title,
+        //     certificateNumber: `${courseData.course_id}/${Math.floor(Math.random() * 9000)}`,
+        //     participantId: `${participant.id}`,
+        //     template: certificate
+        // }
+
         const data = {
-            courseId: courseData._id,
-            fullName: participant.participant_id.fullName,
-            courseTitle: courseData.course_title,
-            certificateNumber: `${courseData.course_id}/TB/${year}/${Math.floor(Math.random() * 9000)}`,
-            participantId: `${participant.id}`,
+            name : participant.participant_id.fullName,
+            courseTitle : courseData.course_title,
+            certificateNumber : `${courseData.course_id}/${Math.floor(Math.random() * 9000)}`,
             template: certificate
         }
     
@@ -112,7 +109,7 @@ exports.getCertificate = async (req, res) => {
             'Content-Type': 'application/pdf'
         })
 
-        pdf.generate(
+        pdfTemplate.generate(
             data,
             (chunk) => stream.write(chunk),
             () => stream.end()
@@ -139,5 +136,62 @@ exports.checkCertificate = async (req, res) => {
             code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
             message: `${error.messages ? error.messages : 'Internal Server Error!'}`
         })
+    }
+}
+
+exports.editCertificateTemplate = async (req, res) => {
+    try {
+        const { courseId, template } = req.body
+
+        const courseData = await Course.findOne(
+            { _id: mongoose.Types.ObjectId(courseId) },
+        )
+        .populate({ path: 'course_participant.participant_id', model: 'customers' })
+        .populate({ path: 'course_participant.order_id', model: 'orders' })
+        
+        if (courseData == null) throw {
+            status: '404',
+            code: 'ERR_NOT_FOUND',
+            messages: 'Course or participant not found'
+        }
+
+        const data = {
+            name : 'John Doe Thanos',
+            courseTitle : courseData.course_title,
+            certificateNumber : `${courseData.course_id}/${Math.floor(Math.random() * 9000)}`,
+            template
+        }
+
+        const stream = res.writeHead(200, {
+            'Content-Type': 'application/pdf'
+        })
+
+        pdfTemplate.generate(
+            data,
+            (chunk) => stream.write(chunk),
+            () => stream.end()
+        )
+    } catch (error) {
+        console.log(new Error(error.messages ? error.messages : error.message))
+        res.status(`${error.status ? error.status : 500}`).json({
+            code: `${error.code ? error.code : 'ERR_INTERNAL_SERVER'}`,
+            message: `${error.messages ? error.messages : 'Internal Server Error!'}`
+        })
+    }
+}
+
+exports.saveCertificateTemplate = async (req, res) => {
+    try {
+        const { courseId, template } = req.body
+
+        const resData = await Course.findOneAndUpdate(
+            { _id: mongoose.Types.ObjectId(courseId) },
+            { certificate_template: template },
+        )
+
+        res.status(200).send('Update Success.')
+    } catch (error) {
+        console.log(new Error(error))
+        res.status(500).send('Internal Server Error')
     }
 }

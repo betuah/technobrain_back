@@ -22,6 +22,39 @@ exports.create = async (req, res) => {
     try {
         const { course_id, course_title, course_desc, course_category, course_price, course_participant, course_start, course_end, certificate_template } = req.body
 
+        const default_certificate = {
+            "certificateNumberPage1": {
+                "align": "left",
+                "fontSize": 14,
+                "fontColor": "#504C69",
+                "x": 660,
+                "y": 30
+            },
+            "certificateNumberPage2": {
+                "align": "center",
+                "fontSize": 8,
+                "fontColor": "#504C69",
+                "x": 78,
+                "y": 495
+            },
+            "name": {
+                "align": "center",
+                "fontSize": 35,
+                "fontColor": "#504C69",
+                "x": 0,
+                "y": 250
+            },
+            "qrcode": {
+                "url": "example",
+                "align": "center",
+                "size": 80,
+                "x": 385,
+                "y": 418
+            },
+            "backBackground": "https://firebasestorage.googleapis.com/v0/b/technobrain-dev.appspot.com/o/certificates%2Faws-back.jpg?alt=media&token=d209a7dc-cc58-4282-95d7-831923109837",
+            "frontBackground": "https://firebasestorage.googleapis.com/v0/b/technobrain-dev.appspot.com/o/certificates%2Fsertifikat_aws_2024_des__sig_front.png?alt=media&token=2862115d-84f3-4540-879a-d0c607a7f1d0"
+        }
+
         const courseData = {
             course_id,
             course_title,
@@ -31,7 +64,7 @@ exports.create = async (req, res) => {
             course_participant,
             course_start,
             course_end,
-            certificate_template
+            certificate_template: default_certificate
         }
 
         Course.create(courseData).then(data => {
@@ -115,7 +148,7 @@ exports.completion = async (req, res) => {
                         if (findOrder.order_id.payment_status == 1) {
                             if (findOrder.certificate == null || findOrder.certificate == '') {
                                 const cert = {
-                                    certificateId : courseData.course_id + Math.floor(Math.random() * 999) + 1,
+                                    certificateId : `${courseData.course_id}/${Math.floor(Math.random() * 999) + 1}`,
                                     course: mongoose.Types.ObjectId(courseData._id),
                                     customer: mongoose.Types.ObjectId(findOrder.participant_id),
                                     participant: i.toString()

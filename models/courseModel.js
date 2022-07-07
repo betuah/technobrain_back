@@ -21,25 +21,50 @@ const participantSchema = new Schema({
 })
 
 const certificateSchema = new Schema({
-   back: {
+   backBackground: {
       type: String,
       trim: true
    },
-   fontColor: {
+   frontBackground: {
       type: String,
       trim: true
    },
-   front: {
-      type: String,
-      trim: true
-   },
-   certificateNumber: {
+   certificateNumberPage1: {
+      show: {
+         type: Boolean,
+      },
       align: {
          type: String,
          trim: true
       },
       fontSize: {
          type: Number
+      },
+      fontColor: {
+         type: String,
+         trim: true
+      },
+      x: {
+         type: Number
+      },
+      y: {
+         type: Number
+      },
+   },
+   certificateNumberPage2: {
+      show: {
+         type: Boolean,
+      },
+      align: {
+         type: String,
+         trim: true
+      },
+      fontSize: {
+         type: Number
+      },
+      fontColor: {
+         type: String,
+         trim: true
       },
       x: {
          type: Number
@@ -53,6 +78,10 @@ const certificateSchema = new Schema({
          type: String,
          trim: true
       },
+      fontColor: {
+         type: String,
+         trim: true,
+      },
       fontSize: {
          type: Number
       },
@@ -63,7 +92,36 @@ const certificateSchema = new Schema({
          type: Number
       },
    },
-   qrcode: {
+   qrcodePage1: {
+      show: {
+         type: Boolean,
+      },
+      url: {
+         type: String,
+         trim: true
+      },
+      align: {
+         type: String,
+         trim: true
+      },
+      size: {
+         type: Number
+      },
+      x: {
+         type: Number
+      },
+      y: {
+         type: Number
+      },
+   },
+   qrcodePage2: {
+      show: {
+         type: Boolean,
+      },
+      url: {
+         type: String,
+         trim: true
+      },
       align: {
          type: String,
          trim: true
