@@ -1,10 +1,8 @@
-const pdfTemplate = require('../services/PDFTemplate')
-const pdf    = require('../services/PDFGenerator')
-const moment = require('moment-timezone')
-
-const mongoose = require('mongoose')
-const Certificate = require('../models/certificateModel')
-const Course = require('../models/courseModel')
+const pdfTemplate   = require('../services/PDFTemplate')
+const pdf           = require('../services/PDFGenerator')
+const mongoose      = require('mongoose')
+const Certificate   = require('../models/certificateModel')
+const Course        = require('../models/courseModel')
 
 exports.index = async (req, res) => {
     try {
