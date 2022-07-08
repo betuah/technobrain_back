@@ -3,12 +3,12 @@ const QRCode        = require('qrcode')
 const axios         = require('axios')
 // const doc = require('pdfkit')
 
-const generate = async (data, dataCallback, endCallback) => {
+const generate = async (templateData, dataCallback, endCallback) => {
     const doc = new PDFDocument({
         size: 'A4',
         layout: 'landscape',
         info: {
-            Title: `${data.courseTitle} - ${data.fullName}`,
+            Title: `${templateData.courseTitle} - ${templateData.name}`,
         },
         margins: { top: 0, left: 0, right: 0, bottom: 0 }
     })
@@ -17,13 +17,12 @@ const generate = async (data, dataCallback, endCallback) => {
     doc.on('end', endCallback)
 
     try {
-        const name            = data.fullName
-        const participantId   = data.participantId
-        const certificateId   = data.certificateNumber
-        const courseId        = data.courseId
-        const template        = data.template
-        const frontImage      = (await axios.get(`${template.front}`, { responseType: 'arraybuffer' })).data
-        const front           = `data:image/jpg;base64,${Buffer.from(frontImage).toString('base64')}`
+        const {
+            name,
+            certificateNumber,
+            certificateId,
+            template
+        } = templateData
 
         const capitalizeName = name.split(" ")
         const fullName = capitalizeName.map((word) => { 
@@ -34,58 +33,82 @@ const generate = async (data, dataCallback, endCallback) => {
             }
         }).join(" ")
 
-        const qrOpts = {
-            color: {
-                dark:"#232323",
-            }
-        }
-
-        // let signature   = await QRCode.toDataURL(`https://technobrainlab.com/certificate/signature/${signatureDate}`, qrOpts)
-        let code = await QRCode.toDataURL(`https://technobrainlab.com/course/certificate/print/${courseId}/${participantId}`, qrOpts)
-
-        doc.image(`${front}`, 0, 0, { width: 842})
-        doc.fillColor(`${template.fontColor}`)
+        // Start Page 1 Template
+        // Page 1Background image
+        const frontImage      = (await axios.get(`${template.frontBackground}`, { responseType: 'arraybuffer' })).data
+        const front = `data:image/jpg;base64,${Buffer.from(frontImage).toString('base64')}`
+        doc.image(`${front}`, 0, 0, { width: 842 })
+        
+        // Participant Name
+        doc.fillColor(`${template.name.fontColor}`)
             .font('public/fonts/Montserrat/Montserrat-Bold.ttf')
             .fontSize(template.name.fontSize)
             .text(fullName, template.name.x, template.name.y, {
                 align: `${template.name.align}`
             })
+        
+        // Qr Code Position
+        if (template.qrcodePage1.show !== null ? template.qrcodePage1.show : false) {
+            const qrOpts = {
+                color: {
+                    dark:"#232323",
+                }
+            }
 
-        if (template.back === null) return doc.end()
+            let codePage1 = await QRCode.toDataURL(`${template.qrcodePage1.url !== '' ? template.qrcodePage1.url : 'example'}`, qrOpts)
+            doc.image(codePage1, template.qrcodePage1.x, template.qrcodePage1.y, { width: template.qrcodePage1.size, align: `${template.qrcodePage1.align}` })
+        }
+        
+        // Certificate Number Position
+        if (template.certificateNumberPage1.show) {
+            doc.font('public/fonts/Montserrat/Montserrat-Regular.ttf')
+                .fontSize(template.certificateNumberPage1.fontSize)
+                .text(certificateNumber, template.certificateNumberPage1.x, template.certificateNumberPage1.y, {
+                    align: template.certificateNumberPage1.align
+                })
+        }
+        // End Page 1 Template
+        
+        if (template.backBackground == null || template.backBackground == "") return doc.end()
 
-        const backImage       = (await axios.get(`${template.back}`, { responseType: 'arraybuffer' })).data
-        const back            = `data:image/jpg;base64,${Buffer.from(backImage).toString('base64')}`
-
+        // Start Page 2 Template
         doc.addPage({
             size: 'A4',
             layout: 'landscape'
         })
-        doc.image(`${back}`, 0, 0, { width: 842})
+
+        // Page 2 background image
+        const backImage       = (await axios.get(`${template.backBackground}`, { responseType: 'arraybuffer' })).data
+        const back            = `data:image/jpg;base64,${Buffer.from(backImage).toString('base64')}`
+        doc.image(`${back}`, 0, 0, { width: 842 })
         
-        if (template.qrcode) {
-            doc.image(code, template.qrcode.x, template.qrcode.y, { width: template.qrcode.size, align: `${template.qrcode.align}` })
+        // Qr Code Position
+        if (template.qrcodePage2.show) {
+            const qrOpts = {
+                color: {
+                    dark:"#232323",
+                }
+            }
+
+            let codePage2 = await QRCode.toDataURL(`${template.qrcodePage2.url !== '' ? `${template.qrcodePage2.url}/${certificateId}` : 'example'}`, qrOpts)
+            doc.image(codePage2, template.qrcodePage2.x, template.qrcodePage2.y, { width: template.qrcodePage2.size, align: `${template.qrcodePage2.align}` })
         }
 
-        if (template.certificateNumber) {
+        // Certificate Number Position
+        if (template.certificateNumberPage2.show) {
             doc.font('public/fonts/Montserrat/Montserrat-Regular.ttf')
-                .fontSize(template.certificateNumber.fontSize)
-                .text(certificateId, template.certificateNumber.x, template.certificateNumber.y, {
-                    align: 'center'
+                .fontSize(template.certificateNumberPage2.fontSize)
+                .text(certificateNumber, template.certificateNumberPage2.x, template.certificateNumberPage2.y, {
+                    align: template.certificateNumberPage2.align
                 })
         }
 
         doc.end()
+        // End Page 2 Template
     } catch (error) {
         console.log(new Error(error))
         doc.end(error)
     }
-}
-
-const imageEncode = (arrayBuffer) => {
-    let u8 = new Uint8Array(arrayBuffer)
-    let b64encoded = btoa([].reduce.call(new Uint8Array(arrayBuffer),function(p,c){return p+String.fromCharCode(c)},''))
-    let mimetype="image/jpeg"
-    return "data:"+mimetype+";base64,"+b64encoded
 }
 
 module.exports = { generate }

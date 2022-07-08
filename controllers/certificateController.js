@@ -52,7 +52,7 @@ exports.getDataCertificateByCourse = async (req, res) => {
 
 exports.getCertificate = async (req, res) => {
     try {
-        const { courseId, participantId } = req.params
+        const { courseId, participantId, certificateId } = req.body
 
         const courseData = await Course.findOne(
             { _id: mongoose.Types.ObjectId(courseId) },
@@ -100,7 +100,8 @@ exports.getCertificate = async (req, res) => {
 
         const data = {
             name : participant.participant_id.fullName,
-            courseTitle : courseData.course_title,
+            courseTitle: courseData.course_title,
+            certificateId,
             certificateNumber : `${courseData.course_id}/${Math.floor(Math.random() * 9000)}`,
             template: certificate
         }
@@ -109,7 +110,7 @@ exports.getCertificate = async (req, res) => {
             'Content-Type': 'application/pdf'
         })
 
-        pdfTemplate.generate(
+        pdf.generate(
             data,
             (chunk) => stream.write(chunk),
             () => stream.end()

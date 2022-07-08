@@ -8,12 +8,12 @@ module.exports = (app) => {
     app.route('/api/v1/certificate/check/:certificateId')
         .get(Certificate.checkCertificate)
 
-    app.route('/api/v1/certificate/print/:courseId/:participantId')
-        .get(Certificate.getCertificate)
-
     app.route('/api/v1/certificate/course/:courseId')
         .get(Certificate.getDataCertificateByCourse)
     
+    app.route('/api/v1/certificate/print')
+        .post(Certificate.getCertificate)
+        
     app.route('/api/v1/certificate/template')
         .post(Certificate.editCertificateTemplate)
     
