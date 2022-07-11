@@ -188,6 +188,68 @@ exports.create = async (req, res) => {
    }
 }
 
+exports.createMany = async (req, res) => {
+   try {
+      const { courseId, data } = req.body
+      const courseData = await Course.find({
+         '_id': mongoose.Types.ObjectId(`${courseId}`)
+      })
+
+      if (courseData.length > 0) {
+         const gross_amount = courseData.reduce((sum, { course_price }) => sum + course_price, 0)
+         const session = await mongoose.startSession()
+         session.startTransaction()
+
+         await Promise.all(data.map(async resData => {
+            try {
+               const orderData = {
+                  order_id: `${Math.floor(Math.random() * 100000 + 1)}`,
+                  payment_type: resData.order_details.payment_type,
+                  payment_status: resData.order_details.payment_status,
+                  items: [mongoose.Types.ObjectId(`${courseId}`)],
+                  bank: resData.order_details.bank,
+                  va_number: '',
+                  gross_amount: gross_amount
+               }
+               
+               const customerData = {
+                  email: resData.email,
+                  fullName: resData.fullName,
+                  phone_number: resData.phone_number,
+                  profession: resData.profession,
+                  institution: resData.institution
+               }
+               
+               const customerRes = await User.create(customerData)
+               const orderRes = await Order.create({
+                  ...orderData,
+                  customer: customerRes._id
+               }),
+                  courseCondition = mongoose.Types.ObjectId(courseId)
+               
+               await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, completion: 0, certificate: null } } })
+            } catch (error) {
+               throw (error)
+            }
+         })).catch(async error => {
+            console.log('Order error', error.response ? error.response : error)
+            await session.abortTransaction()
+            res.status(400).send('Order Failed!')
+         })
+
+         await session.commitTransaction()
+         session.endSession()
+
+         res.status(200).send('Import success!')
+      } else {
+         res.send('Course Tidak ditemukan.')
+      }
+   } catch (error) {
+      console.log(error)
+      res.status(500).send('Internal Server Error')
+   }
+}
+
 exports.paid = async (req, res) => {
    try {
       const { order_id, paid } = req.body

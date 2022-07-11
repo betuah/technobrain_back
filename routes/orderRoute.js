@@ -17,6 +17,9 @@ module.exports = (app) => {
    app.route('/api/v1/order/create')
       .post(order.create)
    
+   app.route('/api/v1/order/create/many')
+      .post(order.createMany)
+   
    app.route('/api/v1/order/paid')
       .post(order.paid)
    
