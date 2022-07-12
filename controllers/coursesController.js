@@ -1,6 +1,7 @@
 const Certificate = require('../models/certificateModel')
 const Course = require('../models/courseModel')
 const mongoose = require('mongoose')
+const { contextsKey } = require('express-validator/src/base')
 
 exports.index = async (req, res) => {
     try {
@@ -234,6 +235,40 @@ exports.uncompletion = async (req, res) => {
     } catch (error) {
         console.log(error)
         res.status(500).send('Internal Server Error')
+    }
+}
+
+exports.deleteParticipant = async (req, res) => {
+    try {
+        const { courseId, participantId } = req.body
+        
+        if (Array.isArray(participantId)) {
+            const items = participantId.map(i => {
+                return mongoose.Types.ObjectId(i) 
+            })
+
+            const a = await Course.findOneAndUpdate(
+                { _id: mongoose.Types.ObjectId(courseId) },
+                {
+                    $pull: {
+                        course_participant: { _id: { $in: items } }
+                    }
+                },
+                { new: true }, 
+            )
+            console.log(items)
+            console.log(a)
+
+            res.status(200).send('Success delete data')
+        } else {
+            res.status(400).json({
+                status: 400,
+                message: "ParticipantId must be array"
+            })
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).send('Failed delete course')
     }
 }
 

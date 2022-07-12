@@ -17,6 +17,10 @@ module.exports = (app) => {
     app.route('/api/v1/course/uncompletion')
         .post(course.uncompletion)
     
+    app.route('/api/v1/course/delete/participant')
+        .post(course.deleteParticipant)
+    
     app.route('/api/v1/course/:course_id')
         .delete(course.delete)
+    
 }

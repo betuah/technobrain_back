@@ -224,10 +224,10 @@ exports.createMany = async (req, res) => {
                const orderRes = await Order.create({
                   ...orderData,
                   customer: customerRes._id
-               }),
-                  courseCondition = mongoose.Types.ObjectId(courseId)
+               })
+               const courseCondition = { _id: mongoose.Types.ObjectId(courseId) }
                
-               await Course.updateMany({ courseCondition }, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, completion: 0, certificate: null } } })
+               await Course.updateMany(courseCondition, { $push: { course_participant: { participant_id: customerRes._id, order_id: orderRes._id, completion: 0, certificate: null } } })
             } catch (error) {
                throw (error)
             }
